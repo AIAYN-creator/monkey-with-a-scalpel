@@ -61,7 +61,7 @@ The agent in this project is Claude. The author has not been able to work on it 
 simulation/   Phase 0: simulator models and the self-correction loop
 firmware/     Phase 1: controller firmware core (tested on a PC; no board layer yet)
 vision/       Phases 1-2: camera capture, calibration, detection
-cad/          Phase 1: printable parts
+cad/          Phase 1: provisional parametric CAD (no real measurements yet; do not print)
 docs/         Decisions and results from each phase
 ```
 

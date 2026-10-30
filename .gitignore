@@ -26,6 +26,14 @@
 !firmware/core/controller.cpp
 !firmware/tests/
 !firmware/tests/test_controller.cpp
+!cad/
+!cad/README.md
+!cad/params.py
+!cad/parts.py
+!cad/build.py
+!cad/render.py
+!cad/params_report.py
+!requirements-cad.txt
 !docs/
 !docs/media/
 !docs/media/self_correction_loop.gif
