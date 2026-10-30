@@ -25,6 +25,8 @@ Early stage. Phase 0 is under way: the simulated gantry and the self-correction 
 
 The agent closes the loop on the simulated gantry. Each iteration measures the tip-to-target error, computes a capped correction and moves; the distance falls from 205 mm to 0.009 mm in 32 iterations, crossing the 50-100 µm reference band on the way. This is an **ideal simulation**, with no backlash and no camera noise yet. [Full video](docs/media/self_correction_loop.mp4). Code: [`simulation/loop_autocorreccion.py`](simulation/loop_autocorreccion.py).
 
+An error model ([`simulation/error_model.py`](simulation/error_model.py)) and a Monte Carlo sweep ([`simulation/sweep_errores.py`](simulation/sweep_errores.py)) then show where the loop breaks. With assumed values, to be replaced by measurements in Phase 1, it ends below 50 µm in at least 95 % of runs up to about 20 µm of camera noise, 20 µm of calibration bias and 12.5 µm axis steps. Calibration bias is a hard floor that more iterations cannot fix, so camera calibration becomes the most demanding requirement. Backlash had no effect up to 200 µm, which holds only because the loop corrects with the camera and not with the motor position.
+
 ## What we are building
 
 - **XYZ gantry** that moves the tool; the sample or phantom stays fixed.
@@ -76,6 +78,7 @@ pip install -r requirements.txt
 python simulation/test_instalacion.py
 python simulation/sim_brazo.py
 python simulation/loop_autocorreccion.py
+python simulation/sweep_errores.py --runs 20
 ```
 
 To look at a MuJoCo model in an interactive window: `python -m mujoco.viewer --mjcf=path/to/model.xml`.

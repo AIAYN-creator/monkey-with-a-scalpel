@@ -42,3 +42,7 @@ jobs:
         run: python simulation/sim_brazo.py --check
       - name: Self-correction loop
         run: python simulation/loop_autocorreccion.py --out "${{ runner.temp }}/iteraciones.csv"
+      - name: Error model self-check
+        run: python simulation/sweep_errores.py --check
+      - name: Error sweep (short)
+        run: python simulation/sweep_errores.py --runs 10 --out "${{ runner.temp }}/barrido.csv" > /dev/null

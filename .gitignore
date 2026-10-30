@@ -17,6 +17,8 @@
 !simulation/test_instalacion.py
 !simulation/sim_brazo.py
 !simulation/loop_autocorreccion.py
+!simulation/error_model.py
+!simulation/sweep_errores.py
 !docs/
 !docs/media/
 !docs/media/self_correction_loop.gif

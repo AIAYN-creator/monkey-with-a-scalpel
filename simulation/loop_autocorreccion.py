@@ -35,7 +35,8 @@ MIN_ROWS = 10  # the log must show a gradual approach, not a single jump
 # Far from the target, with the wrist tilted: the wrist keeps this angle unless --wrist-active.
 START_POSE = {"x": -0.08, "y": 0.07, "z": 0.09, "tilt_y": 0.3, "tilt_x": -0.2}
 
-CSV_COLUMNS = ("iteration", "x_mm", "y_mm", "z_mm", "tilt_y_rad", "tilt_x_rad", "distance_mm", "tip_step_mm")
+CSV_COLUMNS = ("iteration", "x_mm", "y_mm", "z_mm", "tilt_y_rad", "tilt_x_rad", "distance_mm", "tip_step_mm",
+               "true_distance_mm")
 
 
 def measure_error(model, data):
@@ -77,6 +78,8 @@ def autocorrect(model, data, active, measure=measure_error, actuate=apply_joint_
             "tilt_x_rad": _qpos_or_zero(model, data, "tilt_x"),
             "distance_mm": distance_mm,
             "tip_step_mm": step_mm,
+            # What really happens, as opposed to `distance_mm`, which is what the loop measured.
+            "true_distance_mm": float(np.linalg.norm(data.site("target").xpos - tip) * 1000.0),
         })
         if distance_mm < tolerance_mm or iteration == max_iterations:
             break
