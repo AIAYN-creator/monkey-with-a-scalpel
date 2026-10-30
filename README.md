@@ -8,7 +8,7 @@ The goal is to show, stage by stage and with public evidence, that an agent can 
 
 ## Status
 
-Early stage. Phase 0 is under way: the simulated gantry and the self-correction loop run and are checked by the CI. There is no hardware yet. The plan is split into phases, each closed by a joint review with the collaborators before the next one starts.
+Early stage. Phase 0 is under way: the simulated gantry, the self-correction loop and an error model run and are checked by the CI. The controller firmware core exists and is tested on a PC; it has not run on hardware, and there is no hardware yet. The plan is split into phases, each closed by a joint review with the collaborators before the next one starts.
 
 | Phase | Goal | Material | In this repository |
 |---|---|---|---|
@@ -59,7 +59,7 @@ The agent in this project is Claude. The author has not been able to work on it 
 
 ```
 simulation/   Phase 0: simulator models and the self-correction loop
-firmware/     Phase 1: controller firmware
+firmware/     Phase 1: controller firmware core (tested on a PC; no board layer yet)
 vision/       Phases 1-2: camera capture, calibration, detection
 cad/          Phase 1: printable parts
 docs/         Decisions and results from each phase

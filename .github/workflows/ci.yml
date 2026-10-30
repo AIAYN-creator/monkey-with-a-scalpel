@@ -24,6 +24,16 @@ jobs:
           fi
           echo "No forbidden files tracked."
 
+  firmware-tests:
+    name: firmware-tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the controller core with strict warnings
+        run: g++ -std=c++17 -Wall -Wextra -Werror -O2 -Ifirmware/core firmware/core/controller.cpp firmware/tests/test_controller.cpp -o test_controller
+      - name: Run the host tests
+        run: ./test_controller
+
   python-checks:
     name: python-checks
     runs-on: ubuntu-latest

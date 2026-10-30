@@ -19,6 +19,13 @@
 !simulation/loop_autocorreccion.py
 !simulation/error_model.py
 !simulation/sweep_errores.py
+!firmware/
+!firmware/README.md
+!firmware/core/
+!firmware/core/controller.h
+!firmware/core/controller.cpp
+!firmware/tests/
+!firmware/tests/test_controller.cpp
 !docs/
 !docs/media/
 !docs/media/self_correction_loop.gif
