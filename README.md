@@ -8,7 +8,7 @@ The goal is to show, stage by stage and with public evidence, that an agent can 
 
 ## Status
 
-Early planning. There is no code yet. The plan is split into phases, each closed by a joint review with the collaborators before the next one starts.
+Early stage. Phase 0 is under way: the simulated gantry and the self-correction loop run and are checked by the CI. There is no hardware yet. The plan is split into phases, each closed by a joint review with the collaborators before the next one starts.
 
 | Phase | Goal | Material | In this repository |
 |---|---|---|---|
@@ -28,7 +28,7 @@ The agent closes the loop on the simulated gantry. Each iteration measures the t
 ## What we are building
 
 - **XYZ gantry** that moves the tool; the sample or phantom stays fixed.
-- **1-2 axis wrist**, lockable during insertion.
+- **Wrist of 0-2 axes** to control the entry angle. On some paths it stays fixed and only the gantry moves; whether it can be an active axis during insertion will be decided from measurements.
 - **Own linear actuator** for the plunger of a precision syringe.
 - **Two cameras** (top and side) calibrated to millimetres, with a USB microscope as backup if the needle tip needs more resolution.
 - **Closed-loop control**: the agent reads the cameras, computes the error, and sends commands to the controller.
