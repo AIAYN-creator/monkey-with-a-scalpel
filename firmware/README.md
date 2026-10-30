@@ -7,6 +7,11 @@ keeps every safety rule testable on a PC.
 **Status:** the core and its host tests exist. The board layer (step pulses, serial port, pins) does not,
 and nothing here has run on hardware yet.
 
+The core also compiles for the ESP32 with `arduino-cli` (core `esp32:esp32` 3.3.12, board
+`esp32:esp32:esp32`, all warnings on, none reported), using a sketch that only instantiates the controller:
+291,392 bytes of program storage (22 %) and 22,948 bytes of RAM (7 %). On Windows, keep the Arduino data
+directories on a short path: the toolchain fails to unpack under the 260-character path limit.
+
 ## Build and test
 
 From the repository root, on one line:
