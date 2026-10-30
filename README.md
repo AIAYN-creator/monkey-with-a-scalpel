@@ -1,0 +1,65 @@
+# Monkey with a Scalpel
+
+> Because giving an LLM a robotic arm is like giving a monkey a scalpel. This is the sandbox where we teach it not to cut itself.
+
+An open project to build a **high-precision robotic assistant for laboratory work**, with a large language model acting as a copilot: it proposes trajectories, processes camera images and writes control code. **A human supervises and approves every step.**
+
+The goal is to show, stage by stage and with public evidence, that an agent can iterate and correct itself **inside a system that has physical stops and human review**, not despite them.
+
+## Status
+
+Early planning. There is no code yet. The plan is split into phases, each closed by a joint review with the collaborators before the next one starts.
+
+| Phase | Goal | Material | In this repository |
+|---|---|---|---|
+| 0 | The agent iterates and self-corrects in simulation | Simulation only | Yes |
+| 1 | Move the simulation to real hardware: XYZ gantry, two cameras, syringe actuator | Hardware, no samples | Yes |
+| 2 | Validate with synthetic phantoms (gelatin or agarose) and measure position and volume error | Inert materials | Yes |
+| 3 | Regulatory and ethical groundwork | Paperwork only | **No** |
+
+**This repository covers Phases 0-2 only.** Nothing here involves animals or biological tissue. Phase 3 is out of the repository: whether and how it happens depends on the permissions of the university and/or the institution involved, and on written approval from the relevant ethics committee and authority. Nothing in Phase 3 will be carried out without them.
+
+## What we are building
+
+- **XYZ gantry** that moves the tool; the sample or phantom stays fixed.
+- **1-2 axis wrist**, lockable during insertion.
+- **Own linear actuator** for the plunger of a precision syringe.
+- **Two cameras** (top and side) calibrated to millimetres, with a USB microscope as backup if the needle tip needs more resolution.
+- **Closed-loop control**: the agent reads the cameras, computes the error, and sends commands to the controller.
+
+Target figures are working hypotheses, to be fixed by the team before buying hardware: position repeatability around 100 µm and dispensed volumes around 1 µL.
+
+## Principles
+
+- **Human in the loop.** The agent proposes; a person approves. The agent never acts on hardware by itself.
+- **Safety first.** The hardware has a physical power cut-off that does not depend on the computer, limit switches and a communication watchdog. Each is tested before the next step.
+- **Simulation before hardware, inert materials before anything else.** No step is skipped.
+- **Open by default, with limits.** See [PUBLIC_POLICY.md](PUBLIC_POLICY.md).
+
+## How the project is run
+
+Planning lives on a task board managed with [Histos](https://github.com/AIAYN-creator/Histos), kept outside this repository. Every card is worked as a proposal: the agent drafts, automated checks run, and the project owner approves or rejects. Decisions that matter (simulator, mechanics, electronics, specifications) are discussed with the collaborators, a pharmacist, a researcher and a veterinary/welfare adviser, and one person signs them off.
+
+## A note on tooling
+
+The agent in this project is Claude. The author has not been able to work on it with Opus 5.5, Anthropic's frontier model: the project gets flagged by its safety systems. The work is done with Sonnet 5.5 instead. It is mentioned here for transparency, because it shapes how the agent-assisted parts of the project are carried out.
+
+## Repository layout
+
+Planned, not yet created:
+
+```
+simulation/   Phase 0: simulator models and the self-correction loop
+firmware/     Phase 1: controller firmware
+vision/       Phases 1-2: camera capture, calibration, detection
+cad/          Phase 1: printable parts
+docs/         Decisions and results from each phase
+```
+
+## Contributing
+
+Issues and discussion are welcome. Please read [PUBLIC_POLICY.md](PUBLIC_POLICY.md) first; it lists what must never be committed (credentials, personal data, anything from Phase 3).
+
+## License
+
+[MIT](LICENSE), copyright AIAYN-creator.

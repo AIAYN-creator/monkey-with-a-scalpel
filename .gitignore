@@ -1,0 +1,21 @@
+# Everything is ignored by default. Nothing reaches the repository by accident:
+# to publish a file, add a line to the whitelist below (or use `git add -f`),
+# and check it against PUBLIC_POLICY.md first.
+*
+
+# Whitelist: files that are deliberately public.
+!.gitignore
+!README.md
+!LICENSE
+!PUBLIC_POLICY.md
+
+# Secrets and private material. Keep this block last so nothing above can
+# re-include it, and never whitelist these.
+.env
+.env.*
+*.env
+*.key
+*.pem
+secrets/
+credentials*
+phase3/
