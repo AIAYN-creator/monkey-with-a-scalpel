@@ -15,6 +15,7 @@
 !.github/workflows/ci.yml
 !simulation/
 !simulation/test_instalacion.py
+!simulation/sim_brazo.py
 
 # Secrets and private material. Keep this block last so nothing above can
 # re-include it, and never whitelist these.

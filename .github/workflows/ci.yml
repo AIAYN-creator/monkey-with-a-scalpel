@@ -38,3 +38,5 @@ jobs:
         run: ruff check .
       - name: Installation test
         run: python simulation/test_instalacion.py
+      - name: Simulation geometry self-check
+        run: python simulation/sim_brazo.py --check
