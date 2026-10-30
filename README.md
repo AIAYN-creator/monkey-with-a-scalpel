@@ -26,13 +26,14 @@ Early planning. There is no code yet. The plan is split into phases, each closed
 - **Own linear actuator** for the plunger of a precision syringe.
 - **Two cameras** (top and side) calibrated to millimetres, with a USB microscope as backup if the needle tip needs more resolution.
 - **Closed-loop control**: the agent reads the cameras, computes the error, and sends commands to the controller.
+- **Modular by intent**: the system is meant to grow with extra syringes (each with its own wrist), other tools, sensors such as photometry or fluorescence, and a wash station. That is beyond Phases 0-2, but it shapes decisions now: a standard quick-change tool interface, firmware organised by modules, named positions (park, wash, samples) and cameras independent of the tool.
 
 There is no fixed pass mark. The minimum acceptable is to beat a steady human hand, whose involuntary tremor is taken here as a working benchmark of 50-100 µm (published figures vary with the task, the metric and whether the wrist is supported, so the benchmark will be defined precisely and cited before any comparison is made). Beyond that, errors in position and volume are driven as low as the hardware allows, and every phase measures and publishes what it achieves with its uncertainty. Dispensed volumes are around 1 µL, measured with an analytical balance, camera images and the syringe scale.
 
 ## Principles
 
 - **Human in the loop.** The agent proposes; a person approves. The agent never acts on hardware by itself.
-- **Safety first.** The hardware has a physical power cut-off that does not depend on the computer, limit switches and a communication watchdog. Each is tested before the next step.
+- **Safety first.** The design calls for two separate controls: an abort button, handled by the controller rather than the computer, that withdraws the needle along its axis and parks the tool at configured coordinates; and an emergency stop that cuts motor power independently of the computer and the firmware. Limit switches and a communication watchdog complete it. Each layer is tested before the next step.
 - **Simulation before hardware, inert materials before anything else.** No step is skipped.
 - **Open by default, with limits.** See [PUBLIC_POLICY.md](PUBLIC_POLICY.md).
 
@@ -67,6 +68,8 @@ python -m venv .venv
 .venv\Scripts\activate        # on Linux or macOS: source .venv/bin/activate
 pip install -r requirements.txt
 python simulation/test_instalacion.py
+python simulation/sim_brazo.py
+python simulation/loop_autocorreccion.py
 ```
 
 To look at a MuJoCo model in an interactive window: `python -m mujoco.viewer --mjcf=path/to/model.xml`.
