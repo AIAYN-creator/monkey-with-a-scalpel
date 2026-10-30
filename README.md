@@ -19,6 +19,12 @@ Early planning. There is no code yet. The plan is split into phases, each closed
 
 **This repository covers Phases 0-2 only.** Nothing here involves animals or biological tissue. Phase 3 is out of the repository: whether and how it happens depends on the permissions of the university and/or the institution involved, and on written approval from the relevant ethics committee and authority. Nothing in Phase 3 will be carried out without them.
 
+## Phase 0 preview: the self-correction loop
+
+![The agent closing the loop on the simulated gantry: the tip approaches the target and the distance curve falls to the tolerance](docs/media/self_correction_loop.gif)
+
+The agent closes the loop on the simulated gantry. Each iteration measures the tip-to-target error, computes a capped correction and moves; the distance falls from 205 mm to 0.009 mm in 32 iterations, crossing the 50-100 µm reference band on the way. This is an **ideal simulation**, with no backlash and no camera noise yet. [Full video](docs/media/self_correction_loop.mp4). Code: [`simulation/loop_autocorreccion.py`](simulation/loop_autocorreccion.py).
+
 ## What we are building
 
 - **XYZ gantry** that moves the tool; the sample or phantom stays fixed.
