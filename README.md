@@ -27,7 +27,7 @@ Early planning. There is no code yet. The plan is split into phases, each closed
 - **Two cameras** (top and side) calibrated to millimetres, with a USB microscope as backup if the needle tip needs more resolution.
 - **Closed-loop control**: the agent reads the cameras, computes the error, and sends commands to the controller.
 
-Target figures are working hypotheses, to be fixed by the team before buying hardware: position repeatability around 100 µm and dispensed volumes around 1 µL.
+There is no fixed pass mark. The minimum acceptable is to beat a steady human hand, whose involuntary tremor is taken here as a working benchmark of 50-100 µm (published figures vary with the task, the metric and whether the wrist is supported, so the benchmark will be defined precisely and cited before any comparison is made). Beyond that, errors in position and volume are driven as low as the hardware allows, and every phase measures and publishes what it achieves with its uncertainty. Dispensed volumes are around 1 µL, measured with an analytical balance, camera images and the syringe scale.
 
 ## Principles
 
@@ -46,7 +46,7 @@ The agent in this project is Claude. The author has not been able to work on it 
 
 ## Repository layout
 
-Planned, not yet created:
+`simulation/` exists; the rest is planned and not yet created:
 
 ```
 simulation/   Phase 0: simulator models and the self-correction loop
@@ -58,7 +58,18 @@ docs/         Decisions and results from each phase
 
 ## Contributing
 
-Issues and discussion are welcome. Please read [PUBLIC_POLICY.md](PUBLIC_POLICY.md) first; it lists what must never be committed (credentials, personal data, anything from Phase 3).
+Issues and discussion are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and [PUBLIC_POLICY.md](PUBLIC_POLICY.md) first; they explain how changes land on the protected `main` branch and what must never be committed (credentials, personal data, anything from Phase 3).
+
+## Getting started
+
+```
+python -m venv .venv
+.venv\Scripts\activate        # on Linux or macOS: source .venv/bin/activate
+pip install -r requirements.txt
+python simulation/test_instalacion.py
+```
+
+To look at a MuJoCo model in an interactive window: `python -m mujoco.viewer --mjcf=path/to/model.xml`.
 
 ## License
 
