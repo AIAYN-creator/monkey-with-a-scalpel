@@ -33,6 +33,9 @@
 !cad/build.py
 !cad/render.py
 !cad/params_report.py
+!cad/system.py
+!cad/system_parts.py
+!cad/mech_review.py
 !requirements-cad.txt
 !docs/
 !docs/media/

@@ -82,7 +82,7 @@ def parts_sheet(stl_dir, out_png, cols=5, tile_w=520, tile_h=440):
     sheet = Image.new("RGB", (cols * tile_w, head + rows * tile_h), "white")
     d = ImageDraw.Draw(sheet)
     big = 44 if cols >= 5 else 38
-    d.text((sheet.width / 2, 24), "Monkey with a Scalpel: planos provisionales v0.1, piezas", font=font("segoeuib.ttf", big), fill=INK, anchor="ma")
+    d.text((sheet.width / 2, 24), "Monkey with a Scalpel: planos provisionales v0.2, piezas", font=font("segoeuib.ttf", big), fill=INK, anchor="ma")
     d.text((sheet.width / 2, 82), "Medidas supuestas o típicas de catálogo; ninguna es una medición. No imprimir todavía.", font=font("segoeui.ttf", 26),
            fill=RED, anchor="ma")
     for k, row in enumerate(info):
@@ -138,10 +138,64 @@ def assembly_sheet(stl_dir, out_png):
     sheet.save(out_png)
 
 
+SYSTEM_COLORS = (
+    (("phantom_block",), (0.35, 0.75, 0.45, 0.45)),
+    (("syringe_barrel",), (0.65, 0.82, 0.95, 0.6)),
+    (("syringe_needle", "syringe_plunger", "actuator_shaft"), (0.15, 0.15, 0.18, 1.0)),
+    (("cam_a", "cam_b", "actuator_body", "_motor", "_screw", "electronics_box", "_switch_l", "_switch_r"), (0.22, 0.25, 0.30, 1.0)),
+    (("base_plate", "y_plate", "z_plate", "z_riser"), (0.72, 0.75, 0.80, 1.0)),
+    (("upright", "crossbeam", "_post", "_rail", "_carriage"), (0.55, 0.58, 0.63, 1.0)),
+)
+
+
+def system_color(name):
+    for keys, rgba in SYSTEM_COLORS:
+        if any(k in name for k in keys):
+            return rgba
+    return (0.95, 0.55, 0.15, 1.0)
+
+
+def system_items(stl_dir, tag):
+    prefix = f"{tag}_"
+    return [(p, system_color(p.stem[len(prefix):])) for p in sorted(stl_dir.glob(f"{prefix}*.stl"))]
+
+
+def system_sheet(stl_dir, out_png):
+    w, h = 880, 860
+    views = [
+        ("Sistema con el cabezal fijo: isométrica", "sysfixed", 305, -25),
+        ("Alzado (desde el usuario)", "sysfixed", 270, 0),
+        ("Perfil", "sysfixed", 0, 0),
+        ("Con muñeca activa, nivelada", "syswrist", 305, -25),
+        ("Muñeca inclinada 25° (perfil)", "syswristtilt", 0, 0),
+        ("Muñeca inclinada 25°", "syswristtilt", 305, -25),
+    ]
+    sheet = Image.new("RGB", (3 * w + 40, 2 * (h + 40) + 330), "white")
+    d = ImageDraw.Draw(sheet)
+    d.text((sheet.width / 2, 24), "Monkey with a Scalpel: sistema completo, planos provisionales v0.2", font=font("segoeuib.ttf", 46), fill=INK, anchor="ma")
+    d.text((sheet.width / 2, 86), "Medidas supuestas o típicas de catálogo; ninguna es una medición. Motores, tornillos, perfiles y cámaras son maquetas. No imprimir todavía.",
+           font=font("segoeui.ttf", 26), fill=RED, anchor="ma")
+    for k, (label, tag, az, el) in enumerate(views):
+        img = render(system_items(stl_dir, tag), az, el, (w, h), margin=1.0)
+        x, y = 10 + (k % 3) * (w + 10), 140 + (k // 3) * (h + 40)
+        sheet.paste(img, (x, y))
+        d.rectangle((x, y, x + w, y + h), outline=(205, 210, 217), width=2)
+        d.text((x + 16, y + 10), label, font=font("segoeuib.ttf", 28), fill=MUTED)
+    legend = [("Impresa (PETG/ASA)", (0.95, 0.55, 0.15)), ("Aluminio mecanizado", (0.72, 0.75, 0.80)), ("Perfil, carril, carro (comprados)", (0.55, 0.58, 0.63)),
+              ("Motor, cámara, electrónica (maqueta)", (0.22, 0.25, 0.30)), ("Fantoma (maqueta)", (0.35, 0.75, 0.45))]
+    y0 = 140 + 2 * (h + 40) + 10
+    for k, (name, c) in enumerate(legend):
+        x, y = 30 + (k % 3) * 900, y0 + (k // 3) * 48
+        d.rectangle((x, y + 4, x + 30, y + 34), fill=tuple(int(v * 255) for v in c))
+        d.text((x + 44, y), name, font=font("segoeui.ttf", 28), fill=INK)
+    sheet.save(out_png)
+
+
 if __name__ == "__main__":
     stl, out = Path(sys.argv[1]), Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
     parts_sheet(stl, out / "partes.png")
     parts_sheet(stl, out / "partes_vertical.png", cols=3, tile_w=600, tile_h=500)
     assembly_sheet(stl, out / "ensamblaje_cabezal.png")
+    system_sheet(stl, out / "sistema_completo.png")
     print("saved", out)

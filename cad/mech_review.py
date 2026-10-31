@@ -1,0 +1,127 @@
+"""First-pass mechanical review of the provisional design, by hand calculation (numpy only, no FEA).
+
+Usage, from the repository root:
+    python cad/mech_review.py
+
+Every input is an assumption or a typical value (marked). The results are orders of magnitude to decide where
+to look first and what to simulate with FEA; they are NOT a verification. Closed-loop control with the camera
+corrects static deflections, so what matters most is that the deflection is repeatable, that the structure
+settles quickly (natural frequency) and that nothing creeps or drops when the power is off.
+"""
+import math
+
+import params as P
+
+G = 9.81
+E_AL, E_STEEL = 70e3, 200e3  # MPa, typical
+ASSUMED = []
+
+
+def assume(label, value, unit, note=""):
+    ASSUMED.append((label, value, unit, note))
+    return value
+
+
+# --- masses (kg), from CAD volumes at 50 % infill for printed parts, typical for the purchased ones -------------
+FILL = assume("print infill, mass fraction of the solid", 0.5, "-", "assumed")
+PETG, AL = 1.27, 2.70  # g/cm3
+m_tool_printed = sum(v * PETG * FILL for v in (11.78, 36.78, 11.80, 4.46)) / 1000  # clamp, backplate, mount, coupler
+m_actuator = assume("NEMA 11 captive actuator", 0.15, "kg", "typical")
+m_syringe = assume("Hamilton 10 uL with plunger", 0.01, "kg", "assumed")
+m_tool = m_tool_printed + m_actuator + m_syringe
+m_zcar = assume("Z carriage + printed carriage plate", round(0.04 + 28.86 * PETG * FILL / 1000, 3), "kg", "typical + CAD")
+m_zplate = 73.89 * AL / 1000
+m_riser = 84.38 * AL / 1000
+m_zmotor = assume("NEMA 17 (40 mm)", 0.28, "kg", "typical")
+m_zscrew_knob = assume("Z screw + knob + rail", 0.18, "kg", "assumed")
+m_on_ycar = m_tool + m_zcar + m_zplate + m_riser + m_zmotor + m_zscrew_knob
+m_yplate = m_zplate  # same plate
+m_ydrive = assume("Y motor + screw + rail", 0.5, "kg", "assumed")
+m_on_xcar = m_on_ycar + m_yplate + m_ydrive
+
+
+def report():
+    rows = []
+
+    def row(item, value, unit, note=""):
+        rows.append((item, value, unit, note))
+
+    row("Mass of the tool head", round(m_tool, 3), "kg")
+    row("Mass carried by the Y carriage", round(m_on_ycar, 2), "kg", "tool, Z stage, riser, Z motor")
+    row("Mass carried by the X carriage", round(m_on_xcar, 2), "kg", "plus Y plate and Y drive")
+
+    # moments on the carriages (static, worst position)
+    arm = P.ARM_REACH + 3 + 6 + P.CARR_H + 26.0  # from the Y carriage centre to the tool axis, mm
+    cg_arm = arm * 0.6  # centre of mass of the Z stage is between the riser leg and the tool axis
+    m_y = m_on_ycar * G * cg_arm / 1000
+    row("Pitch moment on the Y carriage (centre of mass 0.6 of the reach)", round(m_y, 2), "N m",
+        "compare with the carriage rating in the datasheet")
+    yoff = P.TRAVEL / 2 + 0.0
+    m_x = m_on_xcar * G * (cg_arm * 0.9) / 1000
+    row("Pitch moment on the X carriage", round(m_x, 2), "N m", "compare with the carriage rating in the datasheet")
+    row("Extra moment on the X carriage at full Y travel", round(m_on_ycar * G * yoff / 1000, 2), "N m")
+
+    # Z plate: aluminium 6 mm cantilevered from the riser pattern, tool in front
+    b = 62.0
+    for t in (6.0, 10.0, 12.0):
+        inertia = b * t ** 3 / 12
+        for zc, label in ((P.TIP_MIN + 30 + 93, "carriage low"), (P.TIP_MIN + 30 + 93 + P.TRAVEL, "carriage high")):
+            l = 265.0 - zc  # from the pattern to the carriage
+            f = (m_tool + m_zcar) * G
+            c = 45.0  # lever of the tool centre of mass in front of the plate, mm
+            m = f * c
+            defl = f * l ** 3 / (3 * E_AL * inertia) + m * l ** 2 / (2 * E_AL * inertia)
+            tilt = f * l ** 2 / (2 * E_AL * inertia) + m * l / (E_AL * inertia)
+            tip = tilt * (265.0 - P.TIP_MIN)
+            row(f"Z plate {t:g} mm, {label}: tilt at the carriage", round(math.degrees(tilt), 3), "deg",
+                f"tip shift about {tip * 1000:.0f} um, deflection {defl * 1000:.0f} um")
+        k = 3 * E_AL * inertia / (265.0 - (P.TIP_MIN + 30 + 93 + P.TRAVEL / 2)) ** 3 * 1000  # N/m
+        freq = math.sqrt(k / (m_tool + m_zcar)) / (2 * math.pi)
+        row(f"Z plate {t:g} mm: first mode (tool on a cantilever, mid travel)", round(freq), "Hz",
+            "aim for 50 Hz or more")
+
+    # crossbeam: 2020 profile
+    ix = assume("2020 profile second moment of area", 1.0e4, "mm4", "order of magnitude, verify the datasheet")
+    j = assume("2020 profile torsion constant", 1.0e4, "mm4", "order of magnitude, verify the datasheet")
+    span = 2 * (P.UPRIGHT_X - P.PROFILE / 2)
+    w = m_on_xcar * G
+    sag = w * span ** 3 / (48 * E_AL * ix)
+    row("Crossbeam sag at the centre under the stack", round(sag * 1000), "um", "simply supported 2020, assumed I")
+    torque = w * (P.ARM_REACH * 0.8) / 1000  # N m
+    gj = 26e3 * j
+    twist = torque * 1000 * (span / 4) / gj
+    row("Crossbeam torque from the cantilevered stack", round(torque, 2), "N m")
+    row("Crossbeam twist at mid span", round(math.degrees(twist), 3), "deg",
+        f"tip shift about {twist * 317 * 1000:.0f} um (lever 317 mm), assumed J")
+
+    # uprights: sway
+    h = P.CROSSBEAM_TOP
+    k = 2 * 3 * E_AL * ix / h ** 3 * 1000
+    freq = math.sqrt(k / (m_on_xcar + 1.0)) / (2 * math.pi)
+    row("Frame sway mode, uprights perfectly clamped (upper bound)", round(freq), "Hz",
+        "real joints are much softer: add gussets or diagonal braces")
+
+    # Z lead screw
+    lead, d_pitch, d_root = 2.0, 7.0, 6.2
+    lam = math.atan(lead / (math.pi * d_pitch))
+    mu_lock = math.tan(lam) * math.cos(math.radians(14.5))
+    row("T8x2 self-locking needs a friction coefficient above", round(mu_lock, 3), "-",
+        "POM nut on steel is about 0.1 to 0.2: marginal; add a brake or a friction nut, vibration can back-drive")
+    length = 240.0
+    crit = 1.0 * d_root / length ** 2 * 1e7
+    row("Z screw critical speed (floating end)", round(crit), "rpm", f"keep below 80 %: {0.8 * crit * lead / 60:.0f} mm/s")
+    ecr = math.pi ** 2 * E_STEEL * (math.pi * d_root ** 4 / 64) / length ** 2
+    row("Z screw buckling load", round(ecr), "N", "far above the load")
+    force = (m_tool + m_zcar) * G
+    torque_motor = force * lead / (2 * math.pi * 0.3) / 1000
+    row("Torque to lift the tool (efficiency 0.3)", round(torque_motor, 3), "N m", "a NEMA 17 gives about 0.4 N m")
+    return rows
+
+
+if __name__ == "__main__":
+    print("| Item | Value | Unit | Note |\n|---|---|---|---|")
+    for item, value, unit, note in report():
+        print(f"| {item} | {value} | {unit} | {note} |")
+    print("\nAssumed inputs:")
+    for label, value, unit, note in ASSUMED:
+        print(f"- {label}: {value} {unit} ({note})")

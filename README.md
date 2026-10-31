@@ -8,7 +8,7 @@ The goal is to show, stage by stage and with public evidence, that an agent can 
 
 ## Status
 
-Early stage. Phase 0 is under way: the simulated gantry, the self-correction loop and an error model run and are checked by the CI. The controller firmware core exists and is tested on a PC; it has not run on hardware, and there is no hardware yet. The plan is split into phases, each closed by a joint review with the collaborators before the next one starts.
+Early stage. Phase 0 is under way: the simulated gantry, the self-correction loop and an error model run and are checked by the CI. The controller firmware core exists and is tested on a PC; it has not run on hardware, and there is no hardware yet. A provisional parametric CAD of the whole system (frame, axes, tool head, cameras, controls and an optional wrist) exists too, with geometric checks and a first-order mechanical calculation, but no real measurements. The plan is split into phases, each closed by a joint review with the collaborators before the next one starts.
 
 | Phase | Goal | Material | In this repository |
 |---|---|---|---|

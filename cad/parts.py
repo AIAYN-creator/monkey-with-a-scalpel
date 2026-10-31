@@ -176,11 +176,11 @@ def bearing_support_608():
 
 
 def camera_plate():
-    """Plate for a camera with a 1/4-20 thread, bolted to a 2020 profile with two M5."""
+    """Plate for a camera with a 1/4-20 thread, bolted to the T-slot of a 2020 profile with two M5 (v0.2: on the slot axis)."""
     part = Pos(0, 2.5, 0) * Box(60, 5, 40)
     part -= hole("y", P.CAM_THREAD + P.HOLE_COMP, 20, 0, 2.5, 0)
-    for x in (-10.0, 10.0):
-        part -= hole("y", hd(P.M5_CLEAR), 20, x, 2.5, 14.0)
+    for z in (-14.0, 14.0):
+        part -= hole("y", hd(P.M5_CLEAR), 20, 0, 2.5, z)
     return part
 
 
@@ -210,8 +210,11 @@ def tolerance_coupon():
 
 
 # --- machined parts (drilling plan; aluminium 6 mm, not printed) ----------------------------------------------
-def stage_plate(length=200.0):
-    """Base plate of a stacked axis: rail holes along its axis, the carriage pattern of the previous axis at the middle."""
+def stage_plate(length=200.0, pattern_x=0.0):
+    """Base plate of a stacked axis: rail holes along its axis, the carriage pattern of the previous axis at `pattern_x`.
+
+    The Z plate hangs from its riser, so its pattern sits near the top end (pattern_x = 75).
+    """
     part = Pos(0, 5.0, 3.0) * Box(length, 62, 6)
     n = int(length // P.RAIL_PITCH)
     start = -P.RAIL_PITCH * (n - 1) / 2
@@ -219,7 +222,7 @@ def stage_plate(length=200.0):
         part -= hole("z", 2.5, 10, start + P.RAIL_PITCH * i, 0.0, 3.0)  # tapped M3
     for x in (-P.CARR_B / 2, P.CARR_B / 2):
         for y in (-P.CARR_C / 2, P.CARR_C / 2):
-            part -= hole("z", P.M3_CLEAR, 10, x, y, 3.0)
+            part -= hole("z", P.M3_CLEAR, 10, pattern_x + x, y, 3.0)
     for x in (-12.0, 12.0):
         part -= hole("z", 2.5, 10, x, 28.0, 3.0)  # nut bracket of the previous axis, tapped
     return part
