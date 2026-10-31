@@ -36,10 +36,10 @@ def run(source_text, workdir, name):
     src.write_text(source_text, encoding="utf-8")
     exe = workdir / f"{name}.exe"
     build = subprocess.run(["g++", "-std=c++17", "-O1", f"-I{SOURCE.parent}", str(src), str(TEST), "-o", str(exe)],
-                           capture_output=True, text=True)
+                           check=False, capture_output=True, text=True)
     if build.returncode != 0:
         return "does not compile", build.stderr.strip().splitlines()[:3]
-    result = subprocess.run([str(exe)], capture_output=True, text=True)
+    result = subprocess.run([str(exe)], check=False, capture_output=True, text=True)
     return ("passes" if result.returncode == 0 else "fails"), result.stdout.strip().splitlines()[-1:]
 
 
