@@ -146,7 +146,8 @@ def self_check():
     assert abs(data.qpos[address]) < 1e-12, "a move below half a step must not move the axis"
 
     final, _ = run_once(model, data, em.ErrorModel(bias_mm=0.1), seed=0)
-    assert abs(final - 0.1) < 0.002, "with only a calibration bias the true error must end at the bias"
+    # The loop stops when the measured error is under its tolerance, so the true error ends at the bias within it.
+    assert abs(final - 0.1) < loop.TOLERANCE_MM, "with only a calibration bias the true error must end at the bias"
     print("SELF-CHECK OK")
 
 
