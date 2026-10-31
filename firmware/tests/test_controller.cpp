@@ -126,8 +126,8 @@ void test_homing() {
   CHECK(r.ctl.state() == State::Idle);
   CHECK(r.ctl.homed());
   for (int i = 0; i < kAxes; ++i) CHECK_NEAR(r.ctl.position(static_cast<Axis>(i)), r.phys[i], 0.02);
-  CHECK_NEAR(r.ctl.position(X), -98.0, 0.02);
-  CHECK_NEAR(r.ctl.position(Z), 98.0, 0.02);
+  CHECK_NEAR(r.ctl.position(X), -48.0, 0.02);
+  CHECK_NEAR(r.ctl.position(Z), 48.0, 0.02);
   CHECK_NEAR(r.ctl.position(P), 2.0, 0.02);
   r.run(1000);
   CHECK(no_steps(r.last));
@@ -147,8 +147,8 @@ void test_move_and_soft_limits() {
   std::printf("moves and soft limits\n");
   Rig r;
   r.home();
-  CHECK(r.send("MOVE X101") == "error:limit");
-  CHECK(r.send("MOVE Z-100.001") == "error:limit");
+  CHECK(r.send("MOVE X50.001") == "error:limit");
+  CHECK(r.send("MOVE Z-50.001") == "error:limit");
   CHECK(r.send("MOVE P61") == "error:limit");
   CHECK(r.send("MOVE X10 Q5") == "error:syntax");
   CHECK(r.send("MOVE") == "error:syntax");
@@ -168,7 +168,7 @@ void test_dynamic_limits() {
   std::printf("speed and acceleration limits\n");
   Rig r;
   r.home();
-  CHECK(r.send("MOVE X80 Y60 Z-60 A30 B-30 P50") == "ok");
+  CHECK(r.send("MOVE X40 Y30 Z-40 A30 B-30 P50") == "ok");
   const int window = 50;  // ms
   std::vector<std::array<double, kAxes>> samples;
   while (r.ctl.state() == State::Moving) {
@@ -200,7 +200,7 @@ void test_stop() {
   std::printf("stop\n");
   Rig r;
   r.home();
-  r.send("MOVE X80 F20");
+  r.send("MOVE X40 F20");
   r.run(1500);
   const double at_stop = r.phys[X];
   CHECK(r.send("STOP") == "ok");
@@ -270,7 +270,7 @@ void test_abort_mid_move() {
   std::printf("abort in the middle of a move\n");
   Rig r;
   r.home();
-  r.send("MOVE X90 Y-90 Z-50 F20");
+  r.send("MOVE X45 Y-45 Z-45 F20");
   r.run(800);
   const double before = r.phys[X];
   CHECK(r.send("ABORT") == "ok");
@@ -285,7 +285,7 @@ void test_retract_is_clamped_by_limits() {
   std::printf("withdrawal never leaves the soft limits\n");
   Rig r;
   r.home();
-  r.send("MOVE Z95 F20");
+  r.send("MOVE Z45 F20");
   r.run_until([&] { return r.ctl.state() == State::Idle; }, 100000);
   r.button = true;
   double highest = r.phys[Z];
@@ -298,7 +298,7 @@ void test_retract_is_clamped_by_limits() {
     }
   }
   CHECK(r.ctl.state() == State::Aborted);
-  CHECK(highest <= 100.0 + home_tol(r, Z));
+  CHECK(highest <= 50.0 + home_tol(r, Z));
   CHECK(r.ctl.state() != State::Fault);
 }
 
@@ -340,14 +340,14 @@ void test_limit_switch_fault() {
   Rig r;
   r.home();
   r.phys[X] += 5.0;  // the axis slipped: the controller does not know
-  r.send("MOVE X99 F20");  // physically 104: the switch at 102 closes at a controller position of 97
+  r.send("MOVE X49 F20");  // physically 54: the switch at 52 closes at a controller position of 47
   r.run_until([&] { return r.ctl.state() == State::Fault; }, 100000);
   CHECK(r.ctl.state() == State::Fault);
   CHECK(r.ctl.cause() == Cause::Limit);
   r.run(10);
   CHECK(no_steps(r.last));
   CHECK(!r.last.drivers_enabled);
-  CHECK(r.phys[X] <= 102.01);
+  CHECK(r.phys[X] <= 52.01);
   CHECK(r.send("MOVE X0") == "error:state");
   CHECK(r.send("ABORT") == "ok");  // the tool can still be withdrawn
   CHECK(r.run_until([&] { return r.ctl.state() == State::Aborted; }, 200000));

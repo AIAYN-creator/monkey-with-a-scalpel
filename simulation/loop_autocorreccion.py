@@ -33,7 +33,7 @@ MAX_TIP_STEP_M = 0.02  # largest tip displacement allowed in one iteration
 MIN_ROWS = 10  # the log must show a gradual approach, not a single jump
 
 # Far from the target, with the wrist tilted: the wrist keeps this angle unless --wrist-active.
-START_POSE = {"x": -0.08, "y": 0.07, "z": 0.09, "tilt_y": 0.3, "tilt_x": -0.2}
+START_POSE = {"x": -0.04, "y": 0.04, "z": 0.045, "tilt_y": -0.3, "tilt_x": -0.2}
 
 CSV_COLUMNS = ("iteration", "x_mm", "y_mm", "z_mm", "tilt_y_rad", "tilt_x_rad", "distance_mm", "tip_step_mm",
                "true_distance_mm")

@@ -55,6 +55,6 @@ Error codes: `syntax`, `unknown_command`, `not_homed`, `busy`, `state`, `limit`,
 
 - Homing accuracy is the approach speed times the tick period (5 µm at 5 mm/s and 1 ms). A board layer that
   captures the step count in the switch interrupt removes it.
-- The default configuration is illustrative, not tuned to any hardware.
+- The default configuration is illustrative, not tuned to any hardware. It uses 100 mm of linear travel in total (-50 to +50 mm), with the limit switches 2 mm beyond the soft limits.
 - The withdrawal does not know how deep the needle is: it always withdraws `retract_mm`.
 - This is not certified safety software.

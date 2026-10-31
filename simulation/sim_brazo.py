@@ -19,7 +19,7 @@ import numpy as np
 # Geometry, in metres.
 GANTRY_HEIGHT = 0.15  # height of the Z carriage above the table at the zero pose
 TOOL_LENGTH = 0.13  # from the wrist pivot to the needle tip
-STROKE = 0.10  # half travel of each linear axis
+STROKE = 0.05  # half travel of each linear axis (100 mm useful travel in total)
 WRIST_RANGE = 0.8  # half range of each wrist axis, radians
 TARGET_POS = (0.04, -0.03, 0.01)
 TARGET_RADIUS = 0.004

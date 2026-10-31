@@ -37,12 +37,12 @@ bool parse_number(const std::string& text, double& value) {
 
 Config default_config() {
   Config c{};
-  const AxisConfig linear_min = {1600.0, -100.0, 100.0, 20.0, 200.0, 5.0, -102.0, 4.0, true};
-  const AxisConfig linear_max = {1600.0, -100.0, 100.0, 20.0, 200.0, 5.0, 102.0, 4.0, false};
+  const AxisConfig linear_min = {1600.0, -50.0, 50.0, 20.0, 200.0, 5.0, -52.0, 4.0, true};
+  const AxisConfig linear_max = {1600.0, -50.0, 50.0, 20.0, 200.0, 5.0, 52.0, 4.0, false};
   const AxisConfig wrist_min = {100.0, -45.0, 45.0, 30.0, 300.0, 10.0, -47.0, 4.0, true};
   const AxisConfig plunger = {1600.0, 0.0, 60.0, 5.0, 50.0, 2.0, -2.0, 4.0, true};
   c.axis = {linear_min, linear_min, linear_max, wrist_min, wrist_min, plunger};
-  c.park = {0.0, 0.0, 90.0, 0.0, 0.0};
+  c.park = {0.0, 0.0, 45.0, 0.0, 0.0};
   c.retract_mm = 20.0;
   c.abort_speed_mm_s = 10.0;
   c.stop_decel_factor = 4.0;
