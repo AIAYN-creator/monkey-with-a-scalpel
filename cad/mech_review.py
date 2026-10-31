@@ -80,6 +80,31 @@ def report():
         row(f"Z plate {t:g} mm: first mode (tool on a cantilever, mid travel)", round(freq), "Hz",
             "aim for 50 Hz or more")
 
+    # Z plate printed instead of machined: same load case, carriage low. Moduli are assumptions (printed parts are
+    # anisotropic and creep); a T section (flange 62 x 6 plus a central rib) keeps the 6 mm face and adds depth.
+    e_petg = assume("PETG modulus along the layers", 1.8e3, "MPa", "typical range 1.5 to 2.1 GPa; across layers it is lower")
+    e_cf = assume("carbon-fibre filled nylon or ASA modulus along the layers", 4.0e3, "MPa", "vendor values vary a lot: verify")
+
+    def t_section(rib_w, rib_h, flange_w=62.0, flange_t=6.0):
+        a1, a2 = flange_w * flange_t, rib_w * rib_h
+        y1, y2 = flange_t / 2, flange_t + rib_h / 2
+        yc = (a1 * y1 + a2 * y2) / (a1 + a2)
+        return (flange_w * flange_t ** 3 / 12 + a1 * (y1 - yc) ** 2 + rib_w * rib_h ** 3 / 12 + a2 * (y2 - yc) ** 2)
+
+    zc = P.TIP_MIN + 30 + 93
+    l = 265.0 - zc
+    f = (m_tool + m_zcar) * G
+    for label, e_mod, inertia in (
+        ("aluminium 6 mm (reference)", E_AL, 62.0 * 6 ** 3 / 12),
+        ("PETG solid 20 mm", e_petg, 62.0 * 20 ** 3 / 12),
+        ("PETG, 6 mm face + central rib 10 x 16", e_petg, t_section(10.0, 16.0)),
+        ("carbon-fibre filled, 6 mm face + central rib 10 x 16", e_cf, t_section(10.0, 16.0)),
+        ("carbon-fibre filled, solid 12 mm", e_cf, 62.0 * 12 ** 3 / 12),
+    ):
+        tilt = f * l ** 2 / (2 * e_mod * inertia) + f * 45.0 * l / (e_mod * inertia)
+        row(f"Z plate, {label}: tilt at the carriage (carriage low)", round(math.degrees(tilt), 3), "deg",
+            f"tip shift about {tilt * (265.0 - P.TIP_MIN) * 1000:.0f} um; E I = {e_mod * inertia / 1e6:.1f} N m2")
+
     # crossbeam: 2020 profile
     ix = assume("2020 profile second moment of area", 1.0e4, "mm4", "order of magnitude, verify the datasheet")
     j = assume("2020 profile torsion constant", 1.0e4, "mm4", "order of magnitude, verify the datasheet")

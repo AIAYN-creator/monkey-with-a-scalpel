@@ -26,6 +26,7 @@
 !firmware/core/controller.cpp
 !firmware/tests/
 !firmware/tests/test_controller.cpp
+!firmware/tests/mutation_check.py
 !cad/
 !cad/README.md
 !cad/params.py

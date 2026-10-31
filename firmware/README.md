@@ -21,6 +21,12 @@ g++ -std=c++17 -Wall -Wextra -Werror -O2 -Ifirmware/core firmware/core/controlle
 ./test_controller
 ```
 
+To check that the tests would notice a broken safety rule, inject one fault at a time and require a failure (11 faults, all detected today):
+
+```
+python firmware/tests/mutation_check.py
+```
+
 ## Protocol
 
 One ASCII command per line, answered with `ok ...` or `error:<code>`. Axes are `X Y Z` (mm), `A B` (wrist

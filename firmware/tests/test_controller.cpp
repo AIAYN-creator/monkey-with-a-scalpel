@@ -357,6 +357,48 @@ void test_limit_switch_fault() {
   CHECK(r.send("MOVE X0") == "error:not_homed");
 }
 
+void test_limit_switch_fault_minimum_side() {
+  std::printf("limit switch hit on the minimum side\n");
+  Rig r;
+  r.home();
+  r.send("MOVE X0 F20");
+  r.run_until([&] { return r.ctl.state() == State::Idle; }, 100000);
+  r.phys[X] -= 5.0;  // the axis slipped the other way: physically -54 when the controller reads -49
+  r.send("MOVE X-49 F20");
+  r.run_until([&] { return r.ctl.state() == State::Fault; }, 100000);
+  CHECK(r.ctl.state() == State::Fault);
+  CHECK(r.ctl.cause() == Cause::Limit);
+  r.run(10);
+  CHECK(no_steps(r.last));
+  CHECK(!r.last.drivers_enabled);
+  CHECK(r.phys[X] >= -52.02);
+}
+
+void test_abort_raises_before_moving_sideways() {
+  std::printf("abort raises the tool to the park height before moving in X and Y\n");
+  Rig r;
+  r.home();
+  r.send("MOVE X30 Y20 Z-20 F20");
+  r.run_until([&] { return r.ctl.state() == State::Idle; }, 100000);
+  const double x0 = r.phys[X];
+  const double y0 = r.phys[Y];
+  r.button = true;
+  r.tick();
+  r.button = false;
+  // The withdrawal itself may move X and Y (the tool is tilted), but never more than retract_mm. When Z first
+  // reaches the park height the tool must not have started its sideways trip to the park position yet.
+  double sideways_at_park_height = -1.0;
+  while (r.ctl.state() == State::Aborting && r.ms < 400000) {
+    r.tick();
+    if (sideways_at_park_height < 0.0 && r.phys[Z] >= r.cfg.park[Z] - 0.01) {
+      sideways_at_park_height = std::hypot(r.phys[X] - x0, r.phys[Y] - y0);
+    }
+  }
+  CHECK(r.ctl.state() == State::Aborted);
+  CHECK(sideways_at_park_height >= 0.0);
+  CHECK(sideways_at_park_height <= r.cfg.retract_mm + 0.1);
+}
+
 void test_power_loss() {
   std::printf("loss of motor power\n");
   Rig r;
@@ -406,6 +448,8 @@ int main() {
   test_retract_is_clamped_by_limits();
   test_watchdog();
   test_limit_switch_fault();
+  test_limit_switch_fault_minimum_side();
+  test_abort_raises_before_moving_sideways();
   test_power_loss();
   test_abort_during_homing();
   std::printf("\n%d checks, %d failures\n", g_checks, g_failures);
