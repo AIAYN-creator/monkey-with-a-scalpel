@@ -24,8 +24,15 @@
 !firmware/core/
 !firmware/core/controller.h
 !firmware/core/controller.cpp
+!firmware/core/step_queue.h
+!firmware/board/
+!firmware/board/build.sh
+!firmware/board/controller_board/
+!firmware/board/controller_board/controller_board.ino
+!firmware/board/controller_board/board_config.h
 !firmware/tests/
 !firmware/tests/test_controller.cpp
+!firmware/tests/test_board.cpp
 !firmware/tests/mutation_check.py
 !cad/
 !cad/README.md

@@ -4,13 +4,34 @@ Hardware-independent motion and safety logic for the gantry controller. No Ardui
 board code feeds it the switch states and the clock, and turns the step counts it returns into pulses. This
 keeps every safety rule testable on a PC.
 
-**Status:** the core and its host tests exist. The board layer (step pulses, serial port, pins) does not,
-and nothing here has run on hardware yet.
+**Status:** the core, its host tests and a **provisional board layer for an ESP32-S3 with one TMC2209 per
+axis** exist. Both compile; **nothing here has run on hardware yet** and the pin map, the microstepping and the
+wrist and plunger step counts are unverified assumptions.
 
-The core also compiles for the ESP32 with `arduino-cli` (core `esp32:esp32` 3.3.12, board
-`esp32:esp32:esp32`, all warnings on, none reported), using a sketch that only instantiates the controller:
-291,392 bytes of program storage (22 %) and 22,948 bytes of RAM (7 %). On Windows, keep the Arduino data
-directories on a short path: the toolchain fails to unpack under the 260-character path limit.
+## Board layer (ESP32-S3, six TMC2209 modules in standalone mode)
+
+`firmware/board/controller_board/` is an Arduino sketch. A hardware timer fires at 40 kHz and emits the queued step
+pulses (`firmware/core/step_queue.h`, tested on the PC); every millisecond the loop reads the pins, runs the core
+and queues the steps it returns. Serial lines are read without blocking. Pins, polarity and microstepping are in
+`board_config.h`: switches and the ABORT button are normally closed to ground with pull-ups, so a hit or a broken
+wire reads as triggered, and a missing motor-power signal reads as power lost. The extra command `BOARD` reports
+timer overruns.
+
+- 1/8 microstepping gives 800 steps/mm (1.25 um) and 16 kHz at 20 mm/s, under the 20 kHz limit of the pulse timer.
+- A and B wrist drive and plunger steps per unit are placeholders until the mechanics exist.
+- The step pulse interrupt runs from flash cache; if it misbehaves during flash writes, move it to IRAM.
+- On the bench, fit the ABORT button and the power-ok signal or the controller will (correctly) refuse to move.
+
+Compile (needs `arduino-cli` with the `esp32:esp32` core; on Windows keep its data directories on a short path):
+
+```
+firmware/board/build.sh
+```
+
+Last compile: `esp32:esp32:esp32s3`, all warnings on, none reported, 332,494 bytes of program storage (25 %) and
+23,096 bytes of RAM (7 %).
+
+The earlier compile check of the bare core for the classic ESP32 (`esp32:esp32:esp32`) remains valid for the core.
 
 ## Build and test
 
@@ -19,9 +40,11 @@ From the repository root, on one line:
 ```
 g++ -std=c++17 -Wall -Wextra -Werror -O2 -Ifirmware/core firmware/core/controller.cpp firmware/tests/test_controller.cpp -o test_controller
 ./test_controller
+g++ -std=c++17 -Wall -Wextra -Werror -O2 -Ifirmware/core -Ifirmware/board/controller_board firmware/tests/test_board.cpp -o test_board
+./test_board
 ```
 
-To check that the tests would notice a broken safety rule, inject one fault at a time and require a failure (11 faults, all detected today):
+To check that the tests would notice a broken safety rule, inject one fault at a time and require a failure (20 faults across the core, the step queue and the pin map, all detected today):
 
 ```
 python firmware/tests/mutation_check.py

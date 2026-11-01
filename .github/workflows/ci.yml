@@ -33,6 +33,12 @@ jobs:
         run: g++ -std=c++17 -Wall -Wextra -Werror -O2 -Ifirmware/core firmware/core/controller.cpp firmware/tests/test_controller.cpp -o test_controller
       - name: Run the host tests
         run: ./test_controller
+      - name: Build and run the board layer host tests (step queue and pin map)
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -O2 -Ifirmware/core -Ifirmware/board/controller_board firmware/tests/test_board.cpp -o test_board
+          ./test_board
+      - name: Mutation check (every injected fault must make the tests fail)
+        run: python3 firmware/tests/mutation_check.py
 
   python-checks:
     name: python-checks
