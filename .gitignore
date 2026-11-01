@@ -37,6 +37,7 @@
 !cad/
 !cad/README.md
 !cad/params.py
+!cad/wiring.py
 !cad/parts.py
 !cad/build.py
 !cad/render.py

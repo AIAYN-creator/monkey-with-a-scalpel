@@ -18,6 +18,7 @@ Parametric CAD of the whole system (frame, axes, tool head, cameras, controls, o
 | `build.py` | Builds every part, runs all the checks and exports STL files. |
 | `render.py` | Renders overview sheets of the parts, the tool head and the whole system. |
 | `mech_review.py` | First-order hand calculation of masses, moments, deflections, frequencies and the Z screw, with every assumption listed. |
+| `wiring.py` | Provisional wiring map: cables, conductor counts, estimated lengths and the moving harness. Reads the pins from `firmware/board/controller_board/board_config.h` and checks them (`--check`, also in the CI); `--diagram` draws the block diagram. |
 | `params_report.py` | Prints all parameters and their status as a Markdown table. |
 
 ## Parts
