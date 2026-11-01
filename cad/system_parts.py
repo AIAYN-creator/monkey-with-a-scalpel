@@ -98,6 +98,7 @@ def limit_switch_bracket():
     foot = Pos(0, 0, 2.0) * Box(30, 20, 4)
     wall = Pos(0, -8.0, 13.0) * Box(30, 4, 18)
     part = foot + wall
+    part -= Pos(0, 8.0, 2.0) * Box(3.6, 2.2, 8.0)  # zip-tie slot for the switch cable strain relief
     for x in (-10.0, 10.0):
         part -= hole("z", hd(P.M5_CLEAR), 10, x, 3.0, 2.0)
     for x in (-P.SWITCH_HOLE_PITCH / 2, P.SWITCH_HOLE_PITCH / 2):
@@ -129,6 +130,8 @@ def control_panel():
     part -= hole("y", P.ESTOP_D + P.HOLE_COMP, 10, -40.0, 29.0, 25.0)
     part -= hole("y", P.ABORT_D + P.HOLE_COMP, 10, 10.0, 29.0, 25.0)
     part -= hole("y", P.LED_D + P.HOLE_COMP, 10, 45.0, 29.0, 25.0)
+    for x in (-40.0, 40.0):
+        part -= hole("y", 12.5, 10, x, -29.0, 25.0)  # rear cable glands (provisional size)
     return part
 
 
@@ -207,6 +210,88 @@ def electronics_box():
     return Pos(0, 0, 30.0) * Box(200, 95, 60)
 
 
+def cable_clip_2020():
+    """Clip for the 6 mm slot of a 2020 profile with an open saddle for a cable bundle (about 12 mm).
+
+    Local frame: z = 0 at the profile face, +z away from it; the stem and the T head go into the slot (-z).
+    The slot dimensions are typical values to check on the real profile.
+    """
+    stem = Pos(0, 0, -3.0) * Box(5.6, 10.0, 6.0)
+    head = Pos(0, 0, -7.0) * Box(10.2, 10.0, 2.0)
+    saddle = Pos(0, 0, 8.0) * Box(20.0, 10.0, 16.0)
+    part = stem + head + saddle
+    part -= Pos(0, 0, 8.5) * Rot(90, 0, 0) * Cylinder(6.0, 12.0)
+    part -= Pos(0, 0, 14.0) * Box(11.0, 12.0, 10.0)  # open top of the saddle
+    return part
+
+
+ENC_X, ENC_Y, ENC_Z, ENC_WALL = 210.0, 105.0, 85.0, 3.0
+
+
+def electronics_enclosure():
+    """Printed tray for the supply, contactor, drivers and ESP32, open on top (the lid screws into four posts).
+
+    Local frame: centred on x and y, floor at z = 0. The rear wall (-y) carries eleven 12.2 mm holes for panel
+    connectors or cable glands, one per cable of the wiring map (provisional size). Fixing to the base is not
+    designed: four 4.4 mm holes in the floor, reachable with the lid off.
+    """
+    outer = Pos(0, 0, ENC_Z / 2) * Box(ENC_X, ENC_Y, ENC_Z)
+    inner = Pos(0, 0, ENC_WALL + (ENC_Z - ENC_WALL) / 2 + 0.01) * Box(
+        ENC_X - 2 * ENC_WALL, ENC_Y - 2 * ENC_WALL, ENC_Z - ENC_WALL)
+    part = outer - inner
+    px, py = ENC_X / 2 - ENC_WALL - 5.0, ENC_Y / 2 - ENC_WALL - 5.0
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            part += Pos(sx * px, sy * py, ENC_WALL + (ENC_Z - ENC_WALL) / 2) * Cylinder(4.0, ENC_Z - ENC_WALL)
+            part -= hole("z", 2.5, 12.0, sx * px, sy * py, ENC_Z - 6.0)
+    for i in range(11):
+        part -= hole("y", 12.2 + P.HOLE_COMP, 10, -85.0 + 17.0 * i, -ENC_Y / 2 + ENC_WALL / 2, 45.0)
+    for x in (-60.0, 60.0):
+        for y in (-25.0, 25.0):
+            part -= hole("z", hd(P.M4_CLEAR), 10, x, y, ENC_WALL / 2)
+    return part
+
+
+def enclosure_lid():
+    """Lid of the electronics tray with vent slots and four M3 holes. Local frame: z = 0 at the underside."""
+    part = Pos(0, 0, 1.5) * Box(ENC_X, ENC_Y, 3.0)
+    px, py = ENC_X / 2 - ENC_WALL - 5.0, ENC_Y / 2 - ENC_WALL - 5.0
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            part -= hole("z", hd(P.M3_CLEAR), 10, sx * px, sy * py, 1.5)
+    for i in range(8):
+        part -= Pos(-70.0 + 20.0 * i, 0, 1.5) * Box(4.0, 40.0, 10.0)
+    return part
+
+
+def chain_mount():
+    """End bracket for a drag chain (the same part serves the fixed and the moving ends): a foot with two M4 holes
+    and a lug for the chain end link with two M3 holes. Chain inner width 20 mm assumed. NOT placed in the
+    assembly: the chain route and size are not decided.
+    """
+    foot = Pos(0, 0, 3.0) * Box(40.0, 30.0, 6.0)
+    lug = Pos(0, -10.0, 17.0) * Box(30.0, 8.0, 22.0)
+    part = foot + lug
+    for x in (-14.0, 14.0):
+        part -= hole("z", hd(P.M4_CLEAR), 10, x, 8.0, 3.0)
+    for z in (11.0, 23.0):
+        part -= hole("y", hd(P.M3_CLEAR), 20, 0.0, -10.0, z)
+    return part
+
+
+def tool_connector_holder():
+    """Holder for the floating 12-circuit connector of the tool head (cable end, strain relief by zip tie). Pocket
+    22 x 9 mm assumed; NOT placed in the assembly: the connector is not chosen. The tool position comes from the
+    two pins, never from this connector.
+    """
+    plate = Pos(0, 0, 3.0) * Box(40.0, 20.0, 6.0)
+    part = plate - Pos(0, 0, 4.5) * Box(22.4, 9.4, 6.0)
+    for x in (-16.0, 16.0):
+        part -= hole("z", hd(P.M3_CLEAR), 10, x, 0.0, 3.0)
+    part -= Pos(0, 7.5, 3.0) * Box(3.6, 2.2, 10.0)
+    return part
+
+
 def phantom_block():
     """Phantom container with its block: 60 x 60 x PH_HEIGHT, floor at z = 3."""
     return Pos(0, 0, 3.0 + P.PH_HEIGHT / 2) * Box(P.PHANTOM_BOX, P.PHANTOM_BOX, P.PH_HEIGHT)
@@ -221,6 +306,11 @@ PRINTED_V2 = {
     "quick_knob": quick_knob,
     "wrist_cradle": wrist_cradle,
     "wrist_yoke": lambda: wrist_yoke(110.0),
+    "cable_clip_2020": cable_clip_2020,
+    "electronics_enclosure": electronics_enclosure,
+    "enclosure_lid": enclosure_lid,
+    "chain_mount": chain_mount,
+    "tool_connector_holder": tool_connector_holder,
 }
 MACHINED_V2 = {
     "z_riser": z_riser,

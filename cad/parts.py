@@ -162,6 +162,7 @@ def motor_mount_nema17():
             part -= hole("y", hd(P.M3_CLEAR), 20, dx, 3.0, 23.0 + dz)
     for x in (-15.0, 15.0):
         part -= hole("z", hd(P.M3_CLEAR), 20, x, 20.0, 3.0)
+    part -= Pos(0, 26.0, 3.0) * Box(3.6, 2.2, 8.0)  # zip-tie slot for the motor cable strain relief
     return part
 
 

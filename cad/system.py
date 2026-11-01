@@ -111,10 +111,18 @@ def build_fixed(variant="fixed", setback=110.0):
     ys, zs = -35.0, P.CROSSBEAM_TOP - 10.0
     out["x_screw"] = (Pos(0, ys, zs) * Rot(0, 90, 0) * Pos(0, 0, -105.0) * SP.screw(210.0), "dummy")
     out["x_motor"] = (Pos(-P.UPRIGHT_X + P.PROFILE / 2 + 20.0, ys, zs) * Box(40, P.N17_FACE, P.N17_FACE), "dummy")
-    out["electronics_box"] = (Pos(0, -72.0, 0) * SP.electronics_box(), "dummy")
+    out["electronics_enclosure"] = (Pos(0, -75.0, 0) * SP.electronics_enclosure(), "printed")
+    out["enclosure_lid"] = (Pos(0, -75.0, SP.ENC_Z) * SP.enclosure_lid(), "printed")
+    for i, z in enumerate((60.0, 120.0, 180.0)):  # cable clips up the rear face of the left upright
+        out[f"cable_clip_upright_{i}"] = (Pos(-P.UPRIGHT_X, -P.PROFILE / 2, z) * Rot(90, 0, 0) * SP.cable_clip_2020(), "printed")
+    for i, x in enumerate((-100.0, -50.0)):  # and along the rear face of the crossbeam
+        out[f"cable_clip_beam_{i}"] = (
+            Pos(x, -P.PROFILE / 2, P.CROSSBEAM_TOP - P.PROFILE / 2) * Rot(90, 0, 0) * SP.cable_clip_2020(), "printed")
     out["control_panel"] = (Pos(-130.0, wy + 130.0, 0) * SP.control_panel(), "printed")
-    out["phantom_tray"] = (Pos(0, wy, 0) * parts.phantom_tray(), "printed")
-    out["phantom_block"] = (Pos(0, wy, 0) * SP.phantom_block(), "dummy")
+    if P.HEATER_T > 0:
+        out["heater_plate"] = (Pos(0, wy, P.HEATER_T / 2) * Box(90.0, 90.0, P.HEATER_T), "dummy")
+    out["phantom_tray"] = (Pos(0, wy, P.HEATER_T) * parts.phantom_tray(), "printed")
+    out["phantom_block"] = (Pos(0, wy, P.HEATER_T) * SP.phantom_block(), "dummy")
     # X limit switches on the crossbeam, facing the carriage
     for sign in (-1, 1):
         tag = "r" if sign > 0 else "l"
@@ -209,6 +217,12 @@ ALLOWED = {
     frozenset(("z_motor", "z_knob")),
     frozenset(("actuator_shaft", "plunger_coupler")),
     frozenset(("hamilton_clamp", "syringe_needle")),
+    # the stem of a cable clip sits in the slot of the profile, which the dummy profile does not have
+    frozenset(("upright_l", "cable_clip_upright_0")),
+    frozenset(("upright_l", "cable_clip_upright_1")),
+    frozenset(("upright_l", "cable_clip_upright_2")),
+    frozenset(("crossbeam", "cable_clip_beam_0")),
+    frozenset(("crossbeam", "cable_clip_beam_1")),
 }
 
 
@@ -304,7 +318,7 @@ def sweep_travel(variant="fixed", setback=110.0, margin=4.0):
 
 
 # tilting the wrist to +30 degrees with the needle deeper than this hits the phantom with the cradle (found by the sweep)
-WRIST_TILT_MIN_TIP = 20.0
+WRIST_TILT_MIN_TIP = 20.0 + P.HEATER_T  # 8 mm below the phantom surface (28 mm without a heater plate)
 
 
 def sweep_wrist_all(setback):
