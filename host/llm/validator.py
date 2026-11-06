@@ -1,7 +1,8 @@
 """The deterministic validator: it contains no AI and no randomness. It checks a plan in two passes and says exactly which step breaks which
 rule, so the model can be told what to fix and the person can see why a plan was refused.
 
-1. Static: every step names a known capability with exactly its parameters, numbers inside the range of the capability; at most MAX_STEPS.
+1. Static: every step names a known capability with exactly its parameters, numbers inside the range of the capability. There is no cap on the number of steps.
+   The validator advises the person; it does not limit what the model may propose (see run_session and proposals).
 2. Dry run: the plan runs on a fresh simulated world (the same code the executor uses). A machine rule (`PlanError`) or a limit of a
    tool (`ToolFault`, from the descriptor) stops the run at that step. The plan must also end safe: tool off and the head parked.
 """
@@ -9,7 +10,7 @@ from dataclasses import dataclass, field
 
 from toolsim import ToolFault
 
-from .capabilities import MAX_STEPS, all_capabilities
+from .capabilities import all_capabilities
 from .world import PlanError, World
 
 
@@ -42,8 +43,6 @@ def static_check(plan):
     caps = all_capabilities()
     if not plan.steps:
         found.append(Violation(0, "empty", "the plan has no steps"))
-    if len(plan.steps) > MAX_STEPS:
-        found.append(Violation(0, "too_long", f"{len(plan.steps)} steps, the limit is {MAX_STEPS}"))
     for i, step in enumerate(plan.steps, 1):
         schema = caps.get(step.capability)
         if schema is None:

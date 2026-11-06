@@ -55,12 +55,17 @@ and `p1-12`). Colour: amber means look here, red only a stop or a fault. `python
 
 ## `llm/` (card `sw-llm`)
 
-The interface between a language model and the machine. The model never sends a command: it proposes steps that name a capability from a
-closed list (the machine's and every tool's, built from the descriptors), with typed parameters. A deterministic validator (no AI) checks
-the plan statically and by dry-running it on a simulated world with the same code that will run it; a person approves the exact plan
-(the approval carries its hash, so any edit voids it); the plan is narrated step by step from templates; every event goes to a hash-chained
-log; a stop or a fault aborts. The model is replaceable by a script (`ScriptedLLM`), which is how the tests and simulations run. A client
-for a real model is not written: it only has to implement `propose(goal, description, feedback)`. `python host/llm/test_llm.py` (part of the CI).
+The interface between a language model and the machine. **The model is free**: it can fetch documents (papers, datasheets, pages) into a
+library (`research.py`, no quota and no list of allowed sources, every fetch logged with its hash), and it can propose anything and as much
+as it wants (`proposals.py`: any kind, any length, no cap on how many, no budget of attempts). A person decides on each proposal, and the
+approval carries the exact hash of it, so any edit voids it. The limits live where they are physical: the model never sends a raw command
+to a motor, it names capabilities from a list built from the machine and the tool descriptors, and execution stops at the first step that
+breaks a machine rule or a tool limit (the firmware and the hardware cut-offs are the last word). A deterministic validator (no AI) dry-runs
+a machine plan on a simulated world with the same code that will run it, but **it only advises**: its findings travel with the proposal
+for the person to weigh (`strict=True` sends them back to the model instead). The plan is narrated step by step from templates; every event
+goes to a hash-chained log; a stop or a fault aborts. The model is replaceable by a script (`ScriptedLLM`), which is how the tests and
+simulations run. A client for a real model is not written: it only has to implement `propose(goal, description, feedback)`.
+`python host/llm/test_llm.py` (part of the CI).
 
 ## Calibration procedure (proposal, to test with the real cameras)
 

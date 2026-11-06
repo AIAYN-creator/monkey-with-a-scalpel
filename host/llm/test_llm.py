@@ -15,7 +15,10 @@ from link import ChainLog
 
 from llm import (
     Approval,
+    Library,
     Plan,
+    Proposal,
+    ProposalBox,
     ScriptedHuman,
     ScriptedLLM,
     Step,
@@ -94,7 +97,7 @@ def test_static_rules():
     check(rule_of([s("move_to", x=True, y=0.0, z=10.0, feed=5.0)]) == [(1, "type")], "a boolean is not a number")
     check(rule_of([s("mount_tool", tool="")]) == [(1, "type")], "an empty text is refused")
     check(rule_of([]) == [(0, "empty")], "an empty plan is refused")
-    check(rule_of([s("home")] * 201)[0] == (0, "too_long"), "more than 200 steps is refused")
+    check(rule_of([s("home")] * 500) == [], "there is no cap on the number of steps")
     p = Plan("x", (Step("home", {"speed": 1}),))
     check(not validate(p).ok, "a step built directly is checked too")
 
@@ -171,7 +174,7 @@ def test_session():
         bad = GOOD[:6] + [s("injector.inject", volume_ul=6.0, rate_ul_s=0.5)] + GOOD[7:]
         llm = ScriptedLLM([bad, GOOD])
         human = ScriptedHuman()
-        result = run_session("inject 1 uL at the target", llm, human, log_path, factory)
+        result = run_session("inject 1 uL at the target", llm, human, log_path, factory, strict=True)
         check(result.status == "done", f"the session ends done ({result.status}, {result.reason})")
         check(len(llm.calls) == 2 and llm.calls[0]["feedback"] is None, "the model is called twice, the first time without feedback")
         check(any("step 7" in line and "limit" in line for line in llm.calls[1]["feedback"]), f"the refusal reaches the model as feedback ({llm.calls[1]['feedback']})")
@@ -204,7 +207,7 @@ def test_rejection_and_giving_up():
         check(result.plan.version == 2 and result.plan.parent != "", "the second plan is version 2 and names its parent")
         llm = ScriptedLLM(["not a list", [{"capability": "home", "params": {}, "evil": 1}], [["home"]]])
         result = run_session("g", llm, ScriptedHuman(), Path(tmp) / "b.log")
-        check(result.status == "gave_up" and "malformed" in llm.calls[1]["feedback"][0], "malformed output is not run: three rounds and the session gives up")
+        check(result.status == "gave_up" and "malformed" in llm.calls[1]["feedback"][0], "malformed output is not run; the session ends when the model has nothing more")
         result = run_session("g", ScriptedLLM([]), ScriptedHuman(), Path(tmp) / "c.log")
         check(result.status == "gave_up", "a model that proposes nothing leads to giving up")
         check(ChainLog.verify(Path(tmp) / "c.log")[0], "the log of a failed session verifies too")
@@ -237,9 +240,45 @@ def test_abort_paths():
         check(not world.models["drill"].powered, "a stop cuts the power of the drill at once (cut on abort)")
 
 
+def test_freedom():
+    print("the model is free: any proposal, any source, no quota")
+    with tempfile.TemporaryDirectory() as tmp:
+        log = ChainLog(Path(tmp) / "free.log")
+        pages = {"https://example.org/paper-a": "Paper A: a method for sub-micron stages", "/local/datasheet.pdf": b"%PDF datasheet"}
+        lib = Library(Path(tmp) / "lib", lambda src: pages.get(src, f"content of {src}"), log)
+        docs = [lib.fetch(src) for src in pages] + [lib.fetch(f"https://example.org/p{i}") for i in range(300)]
+        check(len(lib.documents) == 302, "300 more documents are fetched without a limit or a list of allowed sources")
+        check("sub-micron" in lib.text(docs[0].id) and lib.read(docs[1].id).startswith(b"%PDF"), "what was fetched can be read again")
+        check(lib.fetch("https://example.org/paper-a").id == docs[0].id, "the same content is the same document")
+        box = ProposalBox(log)
+        kinds = ["decision", "design change", "paper to read", "a question", "something nobody has named", "x" * 5000]
+        for i, kind in enumerate(kinds):
+            box.submit(Proposal(kind, f"proposal {i}", "body " * 2000, (docs[0].id,)))
+        check(len(box.pending()) == len(kinds), "every kind of proposal is accepted, whatever its name or length")
+        bad = plan_of([s("move_to", x=900.0, y=0.0, z=10.0, feed=5.0)])
+        entry = box.submit(Proposal("plan", "a plan that breaks a limit", "why", (), bad))
+        check(entry.status == "pending" and any("range" in a for a in entry.advice), "a plan with findings is still proposed; the findings are advice")
+        approved = box.decide(entry.proposal.hash, True, "ana", "I want to see it")
+        check(approved.approval.plan_hash == entry.proposal.hash, "the approval carries the hash of the proposal")
+        other = Proposal("plan", "a plan that breaks a limit", "why, but changed", (), bad)
+        check(other.hash != entry.proposal.hash, "any change to a proposal is a different proposal")
+        for _ in range(60):
+            box.submit(Proposal("more", f"n{_}", "b"))
+        check(len(box.entries) == len(kinds) + 61, "there is no cap on how many proposals the model makes")
+        # advisory session: a plan with findings reaches the person, who decides
+        bad_session = GOOD[:6] + [s("injector.inject", volume_ul=6.0, rate_ul_s=0.5)] + GOOD[7:]
+        human = ScriptedHuman(approve=False, comments=["no"])
+        llm = ScriptedLLM([bad_session] + [GOOD] * 10)
+        result = run_session("g", llm, human, Path(tmp) / "adv.log", max_rounds=2)
+        check(len(human.reviewed) == 2 and result.status == "gave_up", "by default the person sees a plan even with findings and decides")
+        text = (Path(tmp) / "free.log").read_text(encoding="utf-8")
+        check("document_fetched" in text and "proposal_submitted" in text and "proposal_decided" in text, "fetches, proposals and decisions are logged")
+        check(ChainLog.verify(Path(tmp) / "free.log")[0], "the log of the free session verifies")
+
+
 def main():
     for test in (test_tables, test_valid_plan, test_static_rules, test_dry_run_rules, test_approval_bound_to_hash, test_narration,
-                 test_session, test_rejection_and_giving_up, test_abort_paths):
+                 test_session, test_rejection_and_giving_up, test_abort_paths, test_freedom):
         test()
     print("LLM OK" if not FAILURES else f"LLM FAILED: {len(FAILURES)} checks")
     return 1 if FAILURES else 0

@@ -9,7 +9,6 @@ from toolsim import load_descriptor
 from toolsim.base import ROOT
 
 MACHINE = {"x": (-50.0, 50.0), "y": (-50.0, 50.0), "z": (0.0, 100.0), "feed": (0.1, 20.0)}  # tip position (mm) and speed (mm/s)
-MAX_STEPS = 200
 STEP_MS = 2000  # simulated time that each step takes at least (the cautery gap, for one)
 
 # machine capabilities: name -> {param: (min, max) or "text"}

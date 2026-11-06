@@ -86,13 +86,21 @@ def execute(plan, approval, world, human, log):
     return Result("done", plan, "", list(world.executed))
 
 
-def run_session(goal, llm, human, log_path, world_factory=World, max_rounds=3):
-    """Asks the model for a plan until one passes the validator and the person, then executes it. Returns a Result."""
+def run_session(goal, llm, human, log_path, world_factory=World, max_rounds=None, strict=False):
+    """Asks the model for a plan until the person approves one, then executes it. Returns a Result.
+
+    By default the validator only advises: the person sees the plan with its findings and decides (execution still stops at the first
+    step that breaks a machine rule or a tool limit). With `strict=True` a plan with findings goes back to the model without reaching
+    the person. `max_rounds=None` means no cap: the session ends when the person approves, or when the model has nothing more to propose.
+    """
     log = ChainLog(log_path)
     log.append(event="session_start", goal=goal)
-    feedback, previous = None, None
-    for round_number in range(1, max_rounds + 1):
+    feedback, previous, round_number = None, None, 0
+    while max_rounds is None or round_number < max_rounds:
+        round_number += 1
         raw = llm.propose(goal, describe(), feedback)
+        if raw is None or (isinstance(raw, list) and not raw):
+            break
         try:
             plan = Plan.from_dicts(goal, raw, round_number, previous.hash if previous else "")
         except ValueError as error:
@@ -103,7 +111,7 @@ def run_session(goal, llm, human, log_path, world_factory=World, max_rounds=3):
         log.append(event="plan_proposed", version=plan.version, plan=plan.hash, steps=len(plan.steps))
         report = validate(plan, world_factory)
         log.append(event="validation", plan=plan.hash, ok=report.ok, violations=report.messages())
-        if not report.ok:
+        if strict and not report.ok:
             feedback = report.messages()
             continue
         narration = narrate(plan)
@@ -116,5 +124,6 @@ def run_session(goal, llm, human, log_path, world_factory=World, max_rounds=3):
         result.narration = narration
         log.append(event="session_end", status=result.status, reason=result.reason)
         return result
-    log.append(event="session_end", status="gave_up", reason=f"no approved plan in {max_rounds} rounds")
-    return Result("gave_up", previous, f"no approved plan in {max_rounds} rounds")
+    reason = f"no approved plan after {round_number} rounds"
+    log.append(event="session_end", status="gave_up", reason=reason)
+    return Result("gave_up", previous, reason)
