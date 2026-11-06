@@ -11,10 +11,11 @@ The goal is to show, stage by stage and with public evidence, that an agent can 
 Early stage, still in simulation and design: **nothing here has run on hardware, and no real measurement exists yet.** What exists today:
 
 - **Simulation (Phase 0):** the simulated gantry, the self-correction loop and an error model, checked by the CI.
-- **Controller firmware:** a hardware-independent C++ core with limits, a communication watchdog and an abort that withdraws the tool, plus a provisional board layer for an ESP32-S3 with one TMC2209 driver per axis. Both compile (the board layer for `esp32s3`) and are tested on a PC. A mutation check injects 20 faults, one at a time, into the core, the step queue and the pin map, and the tests must catch every one; it runs in the CI.
-- **CAD:** a provisional parametric model of the whole system (30 parts: frame, three axes, an optional active wrist, tool head, cameras, controls, electronics enclosure, cable clips and a heater-plate parameter). It is a registry of modules, so parts can be developed in parallel. It has geometric checks (interferences at the corners of the travel and in the wrist swing, camera line of sight) and a first-order mechanical calculation, but no finite-element analysis and no real measurements. **Do not print yet.**
+- **Controller firmware:** a hardware-independent C++ core with limits, a communication watchdog and an abort that withdraws the tool, plus a provisional board layer for an ESP32-S3 with one TMC2209 driver per axis. Both compile (the board layer for `esp32s3`) and are tested on a PC. A mutation check injects 21 faults, one at a time, into the core, the step queue and the pin map, and the tests must catch every one; it runs in the CI.
+- **CAD:** a provisional parametric model of the whole system (38 parts: frame with diagonal braces and a box crossbeam, three axes, an optional active wrist with a worm drive, tool head, two cameras and a microscope, controls, electronics enclosure, cable clips, a specimen fixture and a heater-plate parameter). It is a registry of modules, so parts can be developed in parallel. It has geometric checks (interferences at the corners of the travel and in the wrist swing, camera line of sight) and a first-order mechanical calculation, but no finite-element analysis and no real measurements. **Do not print yet.**
 - **Wiring map:** cables, conductor counts, estimated lengths and the moving harness, checked against the firmware pins.
-- **Plan:** a card board with a batch of 35 new cards (decisions, software, one module per tool, integration and tests), arranged so independent work can run in parallel without clashing. It is kept outside this repository.
+- **Host software:** `host/coords/` has the sample coordinate frames and the camera calibration with two-camera triangulation, tested in the CI. The control layer, the camera-overlay viewer and the LLM interface are next.
+- **Plan:** a card board with a batch of 36 cards (decisions, software, one module per tool, integration and tests), arranged so independent work can run in parallel without clashing. It is kept outside this repository.
 
 The plan is split into phases, each closed by a joint review with the collaborators before the next one starts. **Phase 1 now covers the whole tool family, not only the syringe: everything must work before Phase 1 closes, and Phase 2 does not start without that.** If a tool is not built for budget or feasibility, it is simulated and its code, model and tests are prepared anyway, and the project records which tool and why.
 
@@ -38,7 +39,7 @@ An error model ([`simulation/error_model.py`](simulation/error_model.py)) and a 
 ## What we are building
 
 - **XYZ gantry** that moves the tool, with 100 mm of useful travel per axis; the sample or phantom stays fixed. Printed parts wherever stiffness allows.
-- **Active wrist** (two axes, A and B) to control the entry angle, controlled open loop and watched by the cameras. It is the default design; the earlier fixed-wedge option stays as a fallback.
+- **Active wrist** (two axes: B, the rotation about X, is designed with a worm drive that holds its angle with the power off; A, about Y, is next) to control the entry angle, controlled open loop and watched by the cameras. It is the default design; the earlier fixed-wedge option stays as a fallback. With the wrist the tip has a minimum height, because the yoke arms straddle the needle.
 - **Interchangeable tools on one quick-change interface**: an injector (precision syringe with its own linear actuator), a contact probe, a scalpel with a depth stop, a micro-drill, aspiration/irrigation/dispensing, a gripper, a cautery and optical sensors (fluorescence, photometry), with a wash station and a tool rack. Only the injector exists as a design so far. The tool contract (not written yet) will have each tool declare its capabilities, its geometry and its safe state, the firmware refuse a tool it does not know, and the tool power be switched by the same contactor as the emergency stop.
 - **Cameras**: two cameras (one oblique, one lateral) calibrated to millimetres, plus a USB microscope as an extra view.
 - **Closed-loop control**: the agent reads the cameras, computes the error, and sends commands to the controller.
@@ -65,14 +66,14 @@ The agent in this project is Claude. The author has not been able to work on it 
 
 ## Repository layout
 
-`simulation/`, `firmware/` and `cad/` exist; `vision/` and `host/` are planned and not yet created:
+`simulation/`, `firmware/`, `cad/` and `host/` exist; `vision/` is planned and not yet created:
 
 ```
 simulation/   Phase 0: simulator models, the self-correction loop and the error model
 firmware/     core/ (motion and safety, no hardware headers), board/ (ESP32-S3 sketch, pin map), tests/ (host tests and the mutation check)
 cad/          provisional parametric CAD: modules/ (one file per group of parts), layout.py, build.py, wiring.py, mech_review.py (no real measurements; do not print)
 vision/       planned: camera capture, calibration, detection
-host/         planned: control layer on the PC, camera-overlay viewer, LLM interface
+host/         coords/ (sample frames, camera calibration); planned: control layer on the PC, camera-overlay viewer, LLM interface
 docs/         media and results from each phase
 ```
 
