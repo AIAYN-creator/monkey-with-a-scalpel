@@ -30,13 +30,13 @@ m_actuator = assume("NEMA 11 captive actuator", 0.15, "kg", "typical")
 m_syringe = assume("Hamilton 10 uL with plunger", 0.01, "kg", "assumed")
 m_tool = m_tool_printed + m_actuator + m_syringe
 m_zcar = assume("Z carriage + printed carriage plate", round(0.04 + 28.86 * PETG * FILL / 1000, 3), "kg", "typical + CAD")
-m_zplate = 73.89 * AL / 1000
+m_zplate = 73.89 * AL / 1000 * (200.0 + P.DZ) / 200.0  # the plate is 200 mm at 100 mm of Z travel
 m_riser = 84.38 * AL / 1000
 m_zmotor = assume("NEMA 17 (40 mm)", 0.28, "kg", "typical")
-m_zscrew_knob = assume("Z screw + knob + rail", 0.18, "kg", "assumed")
+m_zscrew_knob = assume("Z screw + knob + rail", round(0.18 + 0.0012 * P.DZ, 3), "kg", "assumed, 1.2 g per mm of Z travel")
 m_on_ycar = m_tool + m_zcar + m_zplate + m_riser + m_zmotor + m_zscrew_knob
-m_yplate = m_zplate  # same plate
-m_ydrive = assume("Y motor + screw + rail", 0.5, "kg", "assumed")
+m_yplate = 73.89 * AL / 1000 * (200.0 + P.DY) / 200.0  # same plate, as long as the Y travel needs
+m_ydrive = assume("Y motor + screw + rail", round(0.5 + 0.0025 * P.DY, 3), "kg", "assumed, 2.5 g per mm of Y travel for the rail and screw")
 m_on_xcar = m_on_ycar + m_yplate + m_ydrive
 
 
@@ -56,7 +56,7 @@ def report():
     m_y = m_on_ycar * G * cg_arm / 1000
     row("Pitch moment on the Y carriage (centre of mass 0.6 of the reach)", round(m_y, 2), "N m",
         "compare with the carriage rating in the datasheet")
-    yoff = P.TRAVEL / 2 + 0.0
+    yoff = P.TRAVEL_Y / 2 + 0.0
     m_x = m_on_xcar * G * (cg_arm * 0.9) / 1000
     row("Pitch moment on the X carriage", round(m_x, 2), "N m", "compare with the carriage rating in the datasheet")
     row("Extra moment on the X carriage at full Y travel", round(m_on_ycar * G * yoff / 1000, 2), "N m")
@@ -66,16 +66,16 @@ def report():
     for t in (6.0, 10.0, 12.0):
         inertia = b * t ** 3 / 12
         for zc, label in ((P.TIP_MIN + 30 + 93, "carriage low"), (P.TIP_MIN + 30 + 93 + P.TRAVEL, "carriage high")):
-            l = 265.0 - zc  # from the pattern to the carriage
+            l = (265.0 + P.DZ) - zc  # from the pattern to the carriage
             f = (m_tool + m_zcar) * G
             c = 45.0  # lever of the tool centre of mass in front of the plate, mm
             m = f * c
             defl = f * l ** 3 / (3 * E_AL * inertia) + m * l ** 2 / (2 * E_AL * inertia)
             tilt = f * l ** 2 / (2 * E_AL * inertia) + m * l / (E_AL * inertia)
-            tip = tilt * (265.0 - P.TIP_MIN)
+            tip = tilt * ((265.0 + P.DZ) - P.TIP_MIN)
             row(f"Z plate {t:g} mm, {label}: tilt at the carriage", round(math.degrees(tilt), 3), "deg",
                 f"tip shift about {tip * 1000:.0f} um, deflection {defl * 1000:.0f} um")
-        k = 3 * E_AL * inertia / (265.0 - (P.TIP_MIN + 30 + 93 + P.TRAVEL / 2)) ** 3 * 1000  # N/m
+        k = 3 * E_AL * inertia / ((265.0 + P.DZ) - (P.TIP_MIN + 30 + 93 + P.TRAVEL / 2)) ** 3 * 1000  # N/m
         freq = math.sqrt(k / (m_tool + m_zcar)) / (2 * math.pi)
         row(f"Z plate {t:g} mm: first mode (tool on a cantilever, mid travel)", round(freq), "Hz",
             "aim for 50 Hz or more")
@@ -92,7 +92,7 @@ def report():
         return (flange_w * flange_t ** 3 / 12 + a1 * (y1 - yc) ** 2 + rib_w * rib_h ** 3 / 12 + a2 * (y2 - yc) ** 2)
 
     zc = P.TIP_MIN + 30 + 93
-    l = 265.0 - zc
+    l = (265.0 + P.DZ) - zc
     f = (m_tool + m_zcar) * G
     for label, e_mod, inertia in (
         ("aluminium 6 mm (reference)", E_AL, 62.0 * 6 ** 3 / 12),
@@ -103,7 +103,7 @@ def report():
     ):
         tilt = f * l ** 2 / (2 * e_mod * inertia) + f * 45.0 * l / (e_mod * inertia)
         row(f"Z plate, {label}: tilt at the carriage (carriage low)", round(math.degrees(tilt), 3), "deg",
-            f"tip shift about {tilt * (265.0 - P.TIP_MIN) * 1000:.0f} um; E I = {e_mod * inertia / 1e6:.1f} N m2")
+            f"tip shift about {tilt * ((265.0 + P.DZ) - P.TIP_MIN) * 1000:.0f} um; E I = {e_mod * inertia / 1e6:.1f} N m2")
 
     # crossbeam: 2020 profile
     ix = assume("2020 profile second moment of area", 1.0e4, "mm4", "order of magnitude, verify the datasheet")
@@ -132,9 +132,10 @@ def report():
     mu_lock = math.tan(lam) * math.cos(math.radians(14.5))
     row("T8x2 self-locking needs a friction coefficient above", round(mu_lock, 3), "-",
         "POM nut on steel is about 0.1 to 0.2: marginal; add a brake or a friction nut, vibration can back-drive")
-    length = 240.0
-    crit = 1.0 * d_root / length ** 2 * 1e7
-    row("Z screw critical speed (floating end)", round(crit), "rpm", f"keep below 80 %: {0.8 * crit * lead / 60:.0f} mm/s")
+    for axis, length in (("X", 210.0 + P.DX), ("Y", 190.0 + P.DY), ("Z", 240.0 + P.DZ)):
+        crit = 1.0 * d_root / length ** 2 * 1e7
+        row(f"{axis} screw critical speed (floating end, length {length:.0f} mm)", round(crit), "rpm",
+            f"keep below 80 %: {0.8 * crit * lead / 60:.0f} mm/s; the machine feed is up to 20 mm/s")
     ecr = math.pi ** 2 * E_STEEL * (math.pi * d_root ** 4 / 64) / length ** 2
     row("Z screw buckling load", round(ecr), "N", "far above the load")
     force = (m_tool + m_zcar) * G

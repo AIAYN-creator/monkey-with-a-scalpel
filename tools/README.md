@@ -39,4 +39,9 @@ python tools/gen_tool_table.py --check    fail if the table is out of date or a 
 python tools/test_gen_tool_table.py       tests of the parser and of the rules
 ```
 
+```
+python tools/int_check.py                 descriptors against the firmware table, the models, the LLM interface, the wiring and the CAD module,
+                                          and every tool mounted, powered, aborted and changed on the simulated controller (needs g++)
+```
+
 A new tool is a new folder with its descriptor and a regenerated table; nothing else in the firmware changes. Its CAD module (`cad/modules/tool_<name>.py`), its model (`host/toolsim/models.py`) and its capability table (`host/llm/capabilities.py`) are checked against the descriptor by `cad/tool_check.py`, `host/toolsim/test_toolsim.py` and `host/llm/test_llm.py`.

@@ -71,6 +71,7 @@
 !tools/
 !tools/README.md
 !tools/gen_tool_table.py
+!tools/int_check.py
 !tools/test_gen_tool_table.py
 !tools/*/
 !tools/*/descriptor.yaml

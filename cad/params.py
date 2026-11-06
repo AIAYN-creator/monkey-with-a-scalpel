@@ -9,6 +9,7 @@ Every value has a source tag, kept in SOURCE:
 Nothing here is a measurement. Do not print from this version: see MEASUREMENTS_BEFORE_PRINTING.
 All lengths in millimetres.
 """
+import os
 
 SOURCE: dict[str, str] = {}
 
@@ -75,7 +76,15 @@ CAM_THREAD = p("CAM_THREAD", 6.6, "typical", "1/4-20 clearance hole")
 PHANTOM_BOX = p("PHANTOM_BOX", 60.0, "assumed", "container footprint, square")
 
 # --- layout (decided) --------------------------------------------------------------------------------------
-TRAVEL = p("TRAVEL", 100.0, "decided", "useful travel per axis, total")
+# Useful travel per axis, total, in mm. 100 each is the first prototype; a travel study sets other values with the environment variable
+# VERNIER_TRAVEL="x,y,z" (card mech-recorrido). Rails, plates, screws, the frame and the base follow from these numbers.
+_TRAVEL = os.environ.get("VERNIER_TRAVEL")
+_XYZ = tuple(float(v) for v in _TRAVEL.split(",")) if _TRAVEL else (100.0, 100.0, 100.0)
+TRAVEL_X = p("TRAVEL_X", _XYZ[0], "decided", "useful travel of X, total")
+TRAVEL_Y = p("TRAVEL_Y", _XYZ[1], "decided", "useful travel of Y, total")
+TRAVEL_Z = p("TRAVEL_Z", _XYZ[2], "decided", "useful travel of Z, total")
+TRAVEL = TRAVEL_Z  # the vertical travel, as the name was used before there was one per axis
+DX, DY, DZ = TRAVEL_X - 100.0, TRAVEL_Y - 100.0, TRAVEL_Z - 100.0  # growth over the first prototype
 CLAMP_Z = p("CLAMP_Z", 12.0, "decided", "height of the clamp centre above the needle hub plane")
 
 
@@ -83,12 +92,12 @@ CLAMP_Z = p("CLAMP_Z", 12.0, "decided", "height of the clamp centre above the ne
 PROFILE = p("PROFILE", 20.0, "typical", "2020 aluminium profile, square side")
 RAIL_H = p("RAIL_H", 8.0, "typical", "size-12 rail height")
 CARR_H = p("CARR_H", 13.0, "typical", "size-12 carriage total height above the rail seat")
-BASE_X = p("BASE_X", 460.0, "decided", "base plate, X")
-BASE_Y = p("BASE_Y", 380.0, "decided", "base plate, Y")
+BASE_X = p("BASE_X", 460.0 + 2 * DX, "decided", "base plate, X")
+BASE_Y = p("BASE_Y", 380.0 + DY, "decided", "base plate, Y")
 BASE_T = p("BASE_T", 10.0, "assumed", "base plate thickness (aluminium or plywood for the first prototype)")
-UPRIGHT_X = p("UPRIGHT_X", 200.0, "decided", "uprights at x = +/- this")
-CROSSBEAM_TOP = p("CROSSBEAM_TOP", 253.0, "decided", "height of the crossbeam top face above the base plate")
-ARM_REACH = p("ARM_REACH", 160.0, "decided", "forward reach of the Z riser leg from the Y carriage centre; must clear the end of the Y plate at full travel")
+UPRIGHT_X = p("UPRIGHT_X", 200.0 + DX, "decided", "uprights at x = +/- this; the X rail is travel + 100")
+CROSSBEAM_TOP = p("CROSSBEAM_TOP", 253.0 + DZ, "decided", "height of the crossbeam top face above the base plate")
+ARM_REACH = p("ARM_REACH", 160.0 + DY, "decided", "forward reach of the Z riser leg from the Y carriage centre; must clear the end of the Y plate at full travel")
 HEATER_T = p("HEATER_T", 8.0, "assumed", "heater plate under the phantom tray (0 if there is none); raises the phantom and the lowest tip height")
 PH_HEIGHT = p("PH_HEIGHT", 25.0, "assumed", "phantom block height")
 TIP_MIN = p("TIP_MIN", 13.0 + HEATER_T, "decided", "lowest needle-tip height above the base plate (15 mm below the phantom top, which sits on the heater plate)")

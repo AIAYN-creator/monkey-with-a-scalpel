@@ -21,6 +21,8 @@ from layout import (  # noqa: F401 - re-exported for build.py and the other scri
     CARRIAGE_Z_MAX,
     CARRIAGE_Z_MIN,
     HALF,
+    HALF_X,
+    HALF_Y,
     HUB_TO_CARRIAGE,
     Z_PATTERN,
     Z_PLATE_CENTRE,
@@ -153,8 +155,8 @@ def line_of_sight(variant, setback=110.0):
     for cam in ("A", "B"):
         centre = cams[cam]["centre"]
         blocked, total, worst = [], 0, 0.0
-        for xc in (-HALF, 0.0, HALF):
-            for yc in (-HALF, 0.0, HALF):
+        for xc in (-HALF_X, 0.0, HALF_X):
+            for yc in (-HALF_Y, 0.0, HALF_Y):
                 for zt in (P.TIP_MIN, P.TIP_MIN + HALF, P.TIP_MIN + P.TRAVEL):
                     zc = zt + 30.0 + HUB_TO_CARRIAGE
                     moving = build_moving(variant, xc, yc, zc, 0.0, setback)
@@ -204,9 +206,8 @@ def sweep_travel(variant="fixed", setback=110.0, margin=4.0, zc_low=None):
     """
     fixed = build_fixed(variant, setback)
     found = {}
-    half = HALF + margin
-    for xc in (-half, half):
-        for yc in (-half, half):
+    for xc in (-HALF_X - margin, HALF_X + margin):
+        for yc in (-HALF_Y - margin, HALF_Y + margin):
             for zc in (CARRIAGE_Z_MIN - margin if zc_low is None else zc_low, CARRIAGE_Z_MAX + margin):
                 moving = build_moving(variant, xc, yc, zc, 0.0, setback)
                 items = {k: v[0] for k, v in moving.items()}
@@ -235,7 +236,7 @@ WRIST_TILT_MIN_TIP = 20.0 + P.HEATER_T  # 8 mm below the phantom surface (28 mm 
 def sweep_wrist_all(setback):
     """The wrist swing over the whole range and the corners of the XY travel, with the rule that B = +30 needs the tip at or above
     WRIST_TILT_MIN_TIP and the tool never goes below WRIST_MIN_ZC. Axis A is swept at the same positions and heights."""
-    positions = ((0.0, 0.0), (-HALF, -HALF), (HALF, -HALF), (-HALF, HALF), (HALF, HALF))
+    positions = ((0.0, 0.0), (-HALF_X, -HALF_Y), (HALF_X, -HALF_Y), (-HALF_X, HALF_Y), (HALF_X, HALF_Y))
     zc_rule = WRIST_TILT_MIN_TIP + 30.0 + HUB_TO_CARRIAGE
     heights = (zc_rule, CARRIAGE_Z_MIN + HALF, CARRIAGE_Z_MAX)
     found = sweep_wrist(setback, angles=(-P.WRIST_MAX, 0.0, P.WRIST_MAX), zcs=heights, positions=positions)

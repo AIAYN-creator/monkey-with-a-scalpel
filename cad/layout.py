@@ -10,13 +10,15 @@ import params as P
 from build123d import Rot
 
 HUB_TO_CARRIAGE = 93.0  # z of the carriage centre above the needle hub plane (interface at 60 + 33)
-Z_PATTERN = 265.0  # world z of the Z plate pattern centre
-Z_PLATE_LEN = 200.0
-Z_PLATE_PATTERN_X = 75.0
+Z_PATTERN = 265.0 + P.DZ  # world z of the Z plate pattern centre (follows the crossbeam)
+Z_PLATE_LEN = 200.0 + P.DZ
+Z_PLATE_PATTERN_X = 75.0 + P.DZ / 2
 Z_PLATE_CENTRE = Z_PATTERN - Z_PLATE_PATTERN_X
 CARRIAGE_Z_MIN = P.TIP_MIN + 30.0 + HUB_TO_CARRIAGE  # needle tip lowest
 CARRIAGE_Z_MAX = CARRIAGE_Z_MIN + P.TRAVEL
-HALF = P.TRAVEL / 2
+HALF = P.TRAVEL_Z / 2
+HALF_X = P.TRAVEL_X / 2
+HALF_Y = P.TRAVEL_Y / 2
 A_GAP = 14.0  # with the wrist, the A stage (a fixed plate and a boss) sits between the carriage plate and the yoke
 
 

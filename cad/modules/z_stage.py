@@ -60,12 +60,12 @@ def moving(pose):
     z_plate = Pos(xc, y_leg, Z_PLATE_CENTRE) * Rot(270, 0, 270) * parts.stage_plate(Z_PLATE_LEN, Z_PLATE_PATTERN_X)
     out["z_plate"] = (z_plate, "machined", "y")
     z_rot = Rot(270, 0, 270)
-    out["z_rail"] = (Pos(xc, y_pf, Z_PLATE_CENTRE) * z_rot * SP.rail(180.0, "x"), "purchased", "y")
-    out["z_screw"] = (Pos(xc + 58.0, y_pf + 8.0, 95.0) * SP.screw(240.0), "dummy", "y")
-    out["z_motor"] = (Pos(xc + 58.0, y_pf + 8.0, 295.0) * SP.motor17(), "dummy", "y")
-    out["z_knob"] = (Pos(xc + 58.0, y_pf + 8.0, 335.0 + 8.0) * z_knob(), "printed", "y")
+    out["z_rail"] = (Pos(xc, y_pf, Z_PLATE_CENTRE) * z_rot * SP.rail(180.0 + P.DZ, "x"), "purchased", "y")
+    out["z_screw"] = (Pos(xc + 58.0, y_pf + 8.0, 95.0) * SP.screw(240.0 + P.DZ), "dummy", "y")
+    out["z_motor"] = (Pos(xc + 58.0, y_pf + 8.0, 295.0 + P.DZ) * SP.motor17(), "dummy", "y")
+    out["z_knob"] = (Pos(xc + 58.0, y_pf + 8.0, 335.0 + P.DZ + 8.0) * z_knob(), "printed", "y")
     out["z_carriage"] = (Pos(xc, y_pf, zc) * z_rot * SP.carriage("x"), "purchased", "z")
     out["z_carriage_plate"] = (Pos(xc, y_car, zc) * parts.z_carriage_plate(), "printed", "z")
     out["z_switch_bracket"] = (
-        Pos(xc + 25.0, y_pf, 270.0) * Rot(270, 0, 270) * Rot(0, 0, 180) * SP.limit_switch_bracket(), "printed", "y")
+        Pos(xc + 25.0, y_pf, 270.0 + P.DZ) * Rot(270, 0, 270) * Rot(0, 0, 180) * SP.limit_switch_bracket(), "printed", "y")
     return out

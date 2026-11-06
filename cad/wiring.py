@@ -5,7 +5,8 @@ Usage, from the repository root:
     python cad/wiring.py --check    consistency checks (used by the CI), exit code 1 on a problem
     python cad/wiring.py --diagram out/wiring.png    draw the block diagram (needs Pillow)
 
-Nothing here is a verified design. Lengths come from the provisional CAD parameters plus assumed routes; currents and
+The tool interface follows the contract of the card dec-iface: one 12-circuit connector per tool, the wrist motors are machine cables, and
+every tool is checked against its descriptor (tools/<name>/descriptor.yaml). Nothing here is a verified design. Lengths come from the provisional CAD parameters plus assumed routes; currents and
 connectors are typical values to confirm against the datasheets of what is bought. The mains side and the
 motor-power cut-off must be built and reviewed by a qualified person. Pins are read from
 firmware/board/controller_board/board_config.h so the map cannot drift from the firmware.
@@ -39,10 +40,10 @@ PINS = read_pins()
 BOX_TO_UPRIGHT = 0.25  # assumed: the box stands next to an upright
 UPRIGHT = P.CROSSBEAM_TOP / 1000
 BEAM_END = P.UPRIGHT_X / 1000  # worst case: the far end of the crossbeam
-X_CHAIN = P.TRAVEL / 1000 + 0.15  # cable allowance for the X travel plus the bend of the chain
-Y_CHAIN = P.TRAVEL / 1000 + 0.15
+X_CHAIN = P.TRAVEL_X / 1000 + 0.15  # cable allowance for the X travel plus the bend of the chain
+Y_CHAIN = P.TRAVEL_Y / 1000 + 0.15
 REACH = (P.ARM_REACH + 100) / 1000  # along the Y plate and the riser to the Z plate
-Z_DROP = (P.TRAVEL + 225) / 1000  # down the Z plate to the tool head (head height 225 mm)
+Z_DROP = (P.TRAVEL_Z + 225) / 1000  # down the Z plate to the tool head (head height 225 mm)
 SLACK = 1.15  # 15 % for strain relief and service loops
 STATIC_X = BOX_TO_UPRIGHT + UPRIGHT + BEAM_END
 STATIC_END = BOX_TO_UPRIGHT + UPRIGHT + BEAM_END * 0.1
@@ -61,18 +62,21 @@ CABLES = [
     ("C5", "Z motor (NEMA 17 dual shaft, on the Y carriage)", 4, True, True,
      metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH), "4-pin JST-XH"),
     ("C6", "Z limit switch, top", 2, False, True, metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH), "2-pin JST-XH"),
-    ("C7", "Tool head: plunger actuator (NEMA 11) and wrist A and B motors", 12, True, True,
-     metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "12-circuit quick-change connector on the backplate"),
+    ("C7", "Tool bus: switched tool power, ground, 5 V, identification, four signals, two spare (see the tool table)", 12, True, True,
+     metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "12-circuit floating connector at the tool (tool_connector_holder)"),
     ("C8", "Control panel: e-stop contact, ABORT button, pilot LED (common ground)", 5, False, False, 1.0, "5-pin JST-XH"),
     ("C9", "Camera A (USB)", 4, True, False, 2.0, "USB, cable with ferrite"),
     ("C10", "Camera B (USB)", 4, True, False, 2.0, "USB, cable with ferrite"),
     ("C11", "Host PC to the controller (USB serial)", 4, True, False, 1.5, "USB"),
+    ("C12", "Wrist axis A motor (NEMA 11)", 4, True, True, metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "4-pin JST-XH, fixed to the wrist"),
+    ("C13", "Wrist axis B motor (NEMA 11)", 4, True, True, metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "4-pin JST-XH, fixed to the wrist"),
+    ("C14", "Tool presence switch (common ground)", 2, False, True, metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "2-pin JST-XH on the backplate"),
 ]
 
 # Conductors that travel through the X chain and through the Y chain (the moving harness)
 MOVING = {
-    "X chain": ["C3", "C4", "C5", "C6", "C7"],
-    "Y chain": ["C5", "C6", "C7"],
+    "X chain": ["C3", "C4", "C5", "C6", "C7", "C12", "C13", "C14"],
+    "Y chain": ["C5", "C6", "C7", "C12", "C13", "C14"],
 }
 
 # --- power --------------------------------------------------------------------------------------------------------
@@ -88,6 +92,133 @@ def power_budget():
     is chosen with a large margin because motion needs far more than holding. A hypothesis, not a measurement."""
     holding = sum(2 * i * i * COIL_RESISTANCE_OHM for i in MOTOR_CURRENT_A.values())
     return holding, holding * SUPPLY_MARGIN
+
+
+# --- tool interface -----------------------------------------------------------------------------------------------
+# Contract of the card dec-iface: circuits 1-2 switched 24 V, 3-4 ground, 5 logic 5 V, 6 identification (1-wire), 7-10 four signals or motor
+# phases, 11-12 spare or analog input. Each tool says what it puts on 7-12 and which of those the controller must drive or read.
+CONNECTOR_CIRCUITS = 12
+POWER_CIRCUITS = 2
+AMPS_PER_CIRCUIT = 3.0  # assumed contact rating of a 2.5 mm pitch connector
+DERATING = 0.7
+SIGNAL_CIRCUITS = (7, 8, 9, 10)
+ANALOG_CIRCUITS = (11, 12)
+KINDS = {"phase", "pwm", "out", "in", "analog"}
+
+# tool name -> {circuit: (signal, kind)}; the kinds say which controller resource is needed
+TOOL_WIRING = {
+    "injector": {7: ("plunger motor A+", "phase"), 8: ("plunger motor A-", "phase"), 9: ("plunger motor B+", "phase"), 10: ("plunger motor B-", "phase")},
+    "probe": {7: ("stylus trigger contact (NC to ground)", "in"), 11: ("stylus force, optional", "analog")},
+    "scalpel": {7: ("guard servo", "pwm"), 8: ("guard closed sensor", "in")},
+    "drill": {7: ("motor speed", "pwm"), 8: ("motor enable", "out"), 9: ("tachometer", "in"), 11: ("motor current", "analog")},
+    "fluid": {7: ("pump 1", "pwm"), 8: ("pump 2", "pwm"), 9: ("line valve", "out"), 11: ("line pressure", "analog")},
+    "gripper": {7: ("jaw motor A+", "phase"), 8: ("jaw motor A-", "phase"), 9: ("jaw motor B+", "phase"), 10: ("jaw motor B-", "phase"),
+                11: ("jaw force", "analog")},
+    "cautery": {7: ("pulse gate", "out"), 11: ("tip current", "analog")},
+    "sensor": {7: ("light source", "pwm"), 11: ("detector", "analog")},
+}
+
+# What the controller needs besides the existing pins. The ESP32-S3 board has one free GPIO (39): the two reserved TMC2209 UART pins
+# (13, 14) are reclaimed for an I2C bus that carries a 1-wire bridge, a PWM driver, an input expander and an ADC. The tool power enable
+# stays on its own pin so that it does not depend on the bus (a reset leaves it off).
+TOOL_PINS = {"tool_power_enable": 39, "i2c_sda": 13, "i2c_scl": 14}
+I2C_DEVICES = [
+    ("1-wire bridge (DS2484 class)", "reads the identification memory on circuit 6; its presence pulse also tells that a tool is there"),
+    ("16-channel PWM driver (PCA9685 class)", "pwm signals on circuits 7-10"),
+    ("16-bit I/O expander (PCA9555 class)", "digital in and out on circuits 7-10, the presence switch (C14), the guard and tachometer inputs"),
+    ("4-channel ADC (ADS1115 class)", "analog inputs on circuits 11-12"),
+]
+# Tools whose power also goes through a hardware cut-off that the controller cannot override (descriptor power.hw_cutoff).
+HW_CUTOFF_NOTE = ("series switch on the tool 24 V, held closed only while the ABORT loop is intact, the contactor is on and the controller "
+                  "asserts the enable; it opens on its own, without the controller")
+PIN_FORBIDDEN = {0, 3, 19, 20, 43, 44, 45, 46, 48} | set(range(26, 38))
+
+
+def read_descriptors():
+    """{name: {key: value}} for tools/*/descriptor.yaml (the small YAML subset of tools/README.md)."""
+    found = {}
+    for path in sorted((ROOT / "tools").glob("*/descriptor.yaml")):
+        flat, section = {}, None
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            if not raw.strip() or raw.lstrip().startswith("#"):
+                continue
+            key, _, value = raw.strip().partition(":")
+            value = value.strip()
+            if raw.startswith(" ") and section:
+                flat[f"{section}.{key}"] = value
+            elif value == "":
+                section = key
+            else:
+                section = None
+                flat[key] = value
+        found[flat["name"]] = flat
+    return found
+
+
+def tool_table():
+    rows = []
+    for name, desc in read_descriptors().items():
+        wiring = TOOL_WIRING.get(name, {})
+        used = ", ".join(f"{c}: {s}" for c, (s, _k) in sorted(wiring.items())) or "none"
+        rows.append((name, desc["id"], desc["power.max_current_a"], desc["power.hw_cutoff"], desc["power.cut_on_abort"], used))
+    return rows
+
+
+def tool_power_w():
+    """Largest tool power: one tool is powered at a time."""
+    return max(float(d["power.max_current_a"]) for d in read_descriptors().values()) * SUPPLY_V
+
+
+def check_tools():
+    problems = []
+    descriptors = read_descriptors()
+    for name in descriptors:
+        if name not in TOOL_WIRING:
+            problems.append(f"tool {name} has no connector assignment")
+    for name in TOOL_WIRING:
+        if name not in descriptors:
+            problems.append(f"connector assignment for {name}, which has no descriptor")
+    capacity = POWER_CIRCUITS * AMPS_PER_CIRCUIT * DERATING
+    for name, desc in descriptors.items():
+        wiring = TOOL_WIRING.get(name, {})
+        amps = float(desc["power.max_current_a"])
+        if amps > capacity:
+            problems.append(f"tool {name} draws up to {amps} A, the two power circuits carry {capacity:.1f} A")
+        for circuit, (_signal, kind) in wiring.items():
+            if circuit not in SIGNAL_CIRCUITS + ANALOG_CIRCUITS:
+                problems.append(f"tool {name} uses circuit {circuit}, which is not a signal circuit")
+            if kind not in KINDS:
+                problems.append(f"tool {name} circuit {circuit} has an unknown kind {kind}")
+            if kind == "analog" and circuit not in ANALOG_CIRCUITS:
+                problems.append(f"tool {name} puts an analog signal on circuit {circuit}")
+            if circuit in ANALOG_CIRCUITS and kind != "analog":
+                problems.append(f"tool {name} puts a {kind} signal on the analog circuit {circuit}")
+        uses_p = "P" in desc["axes"]
+        phases = sum(1 for _s, k in wiring.values() if k == "phase")
+        if uses_p and phases != 4:
+            problems.append(f"tool {name} uses the P axis and needs exactly 4 motor-phase circuits, it has {phases}")
+        if not uses_p and phases:
+            problems.append(f"tool {name} has motor phases but does not use the P axis")
+        if desc["class"] in ("drill", "cautery") and desc["power.hw_cutoff"] != "true":
+            problems.append(f"tool {name} must have a hardware cut-off")
+    # pins: the three new ones must be free, allowed and the reclaimed ones must be the reserved UART pair
+    used = {p for k, v in PINS.items() if isinstance(v, int) and v >= 0 and k not in ("kReservedUartTx", "kReservedUartRx") for p in [v]}
+    used |= {p for v in PINS.values() if isinstance(v, list) for p in v if p >= 0}
+    if {TOOL_PINS["i2c_sda"], TOOL_PINS["i2c_scl"]} != {PINS["kReservedUartTx"], PINS["kReservedUartRx"]}:
+        problems.append("the I2C pins are not the reserved TMC2209 UART pair")
+    for name, pin in TOOL_PINS.items():
+        if pin in used:
+            problems.append(f"{name} (GPIO {pin}) is already used")
+        if pin in PIN_FORBIDDEN:
+            problems.append(f"{name} (GPIO {pin}) is a forbidden pin of the board")
+    if len(set(TOOL_PINS.values())) != len(TOOL_PINS):
+        problems.append("a tool pin is used twice")
+    # resource counts on the I2C bus
+    pwm = max(sum(1 for _s, k in w.values() if k == "pwm") for w in TOOL_WIRING.values())
+    digital = max(sum(1 for _s, k in w.values() if k in ("out", "in")) for w in TOOL_WIRING.values())
+    if pwm > 4 or digital > 4:
+        problems.append("a tool needs more channels than the circuits provide")
+    return problems
 
 
 # --- tables -------------------------------------------------------------------------------------------------------
@@ -123,10 +254,25 @@ def markdown():
     out.append("| Signal | GPIO | Wiring |\n|---|---|---|")
     for signal, pin, note in pin_table():
         out.append(f"| {signal} | {pin} | {note} |")
+    out.append("\n## Tool connector (12 circuits, contract of dec-iface)\n")
+    out.append("| Tool | Id | Max current (A) | Hardware cut-off | Cut on abort | Circuits 7 to 12 |\n|---|---|---|---|---|---|")
+    for name, ident, amps, cutoff, cut, used in tool_table():
+        out.append(f"| {name} | {ident} | {amps} | {cutoff} | {cut} | {used} |")
+    out.append("\nCircuits 1-2 switched 24 V, 3-4 ground, 5 logic 5 V, 6 identification (1-wire).")
+    out.append("\n## Tool pins and I2C devices (proposed, not yet in the firmware)\n")
+    out.append("| Signal | GPIO | Note |\n|---|---|---|")
+    notes = {"tool_power_enable": "own pin, off after a reset", "i2c_sda": "reclaims kReservedUartTx", "i2c_scl": "reclaims kReservedUartRx"}
+    for signal, pin in TOOL_PINS.items():
+        out.append(f"| {signal} | {pin} | {notes[signal]} |")
+    out.append("\n| Device on the I2C bus | Carries |\n|---|---|")
+    for device, carries in I2C_DEVICES:
+        out.append(f"| {device} | {carries} |")
+    out.append(f"\nHardware cut-off (drill, cautery): {HW_CUTOFF_NOTE}.")
     holding, supply = power_budget()
     out.append(f"\n## Motor power (assumed)\n\nMotor currents set on the drivers: {MOTOR_CURRENT_A} A, coil resistance "
                f"{COIL_RESISTANCE_OHM:g} ohm. Holding dissipation about {holding:.0f} W; with a margin of {SUPPLY_MARGIN:g}x, a "
-               f"{SUPPLY_V:g} V supply of about {supply:.0f} W ({supply / SUPPLY_V:.1f} A).")
+               f"{SUPPLY_V:g} V supply of about {supply:.0f} W ({supply / SUPPLY_V:.1f} A). One tool is powered at a time, up to "
+               f"{tool_power_w():.0f} W on the switched tool rail (the largest descriptor), included in that margin.")
     return "\n".join(out)
 
 
@@ -154,6 +300,7 @@ def check():
     for axis in ("X", "Y", "Z"):
         if PINS["kStepPin"][AXES.index(axis)] < 0:
             problems.append(f"axis {axis} has no step pin")
+    problems += check_tools()
     return problems
 
 
@@ -204,7 +351,7 @@ def diagram(path):
     box(1560, 110, 410, 120, "X axis", ["motor C1, switches C2", "static on the crossbeam"])
     box(1560, 260, 410, 120, "Y axis (moves with X)", ["motor C3, switches C4", "through the X chain"])
     box(1560, 410, 410, 120, "Z axis (moves with Y)", ["motor C5, top switch C6", "through the X and Y chains"])
-    box(1560, 560, 410, 150, "Tool head (quick change)", ["plunger NEMA 11, wrist A, B: C7", "12 conductors, one connector"])
+    box(1560, 560, 410, 150, "Tool head (quick change)", ["tool bus C7 (12 circuits), presence C14", "wrist motors A, B: C12, C13"])
     # panel and PC
     box(470, 520, 330, 110, "Control panel", ["e-stop, ABORT, pilot: C8", "5 conductors"], "#fdebeb", "#a22")
     box(920, 800, 520, 130, "Host PC", ["USB serial to the ESP32 (C11)", "Python loop, safety heartbeat"])
@@ -228,7 +375,7 @@ def diagram(path):
     line((1440, 170), (1560, 170), "C1 C2", "#335")
     line((1440, 320), (1560, 320), "C3 C4", "#335")
     line((1440, 470), (1560, 470), "C5 C6", "#335")
-    line((1440, 635), (1560, 635), "C7", "#335")
+    line((1440, 635), (1560, 635), "C7 C12-14", "#335")
     line((1180, 670), (1180, 800), "C11 USB", "#335")
     line((1440, 865), (1560, 865), "C9 C10", "#335")
     image.save(path)
