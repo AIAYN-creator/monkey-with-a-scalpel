@@ -125,6 +125,24 @@
    ],
    "volume_cm3": 42.88
   },
+  "cautery_holder": {
+   "kind": "printed",
+   "size_mm": [
+    26.0,
+    30.0,
+    36.0
+   ],
+   "volume_cm3": 26.77
+  },
+  "cautery_insulator": {
+   "kind": "printed",
+   "size_mm": [
+    10.0,
+    10.0,
+    10.0
+   ],
+   "volume_cm3": 0.71
+  },
   "chain_mount": {
    "kind": "printed",
    "size_mm": [
@@ -142,6 +160,24 @@
     190.0
    ],
    "volume_cm3": 68.5
+  },
+  "drill_clamp": {
+   "kind": "printed",
+   "size_mm": [
+    30.0,
+    36.0,
+    42.0
+   ],
+   "volume_cm3": 31.09
+  },
+  "drill_depth_stop": {
+   "kind": "printed",
+   "size_mm": [
+    8.0,
+    24.0,
+    24.0
+   ],
+   "volume_cm3": 3.55
   },
   "electronics_enclosure": {
    "kind": "printed",
@@ -161,6 +197,42 @@
    ],
    "volume_cm3": 62.19
   },
+  "fluid_manifold": {
+   "kind": "printed",
+   "size_mm": [
+    24.0,
+    30.0,
+    36.0
+   ],
+   "volume_cm3": 25.31
+  },
+  "fluid_tube_clip": {
+   "kind": "printed",
+   "size_mm": [
+    8.0,
+    14.0,
+    20.0
+   ],
+   "volume_cm3": 1.99
+  },
+  "gripper_body": {
+   "kind": "printed",
+   "size_mm": [
+    30.0,
+    32.0,
+    36.0
+   ],
+   "volume_cm3": 32.38
+  },
+  "gripper_jaw": {
+   "kind": "printed",
+   "size_mm": [
+    3.0,
+    10.0,
+    28.0
+   ],
+   "volume_cm3": 0.83
+  },
   "hamilton_clamp": {
    "kind": "printed",
    "size_mm": [
@@ -169,6 +241,24 @@
     40.0
    ],
    "volume_cm3": 11.78
+  },
+  "latch_hook": {
+   "kind": "printed",
+   "size_mm": [
+    14.0,
+    16.0,
+    24.0
+   ],
+   "volume_cm3": 3.91
+  },
+  "latch_lever": {
+   "kind": "printed",
+   "size_mm": [
+    8.0,
+    20.0,
+    70.0
+   ],
+   "volume_cm3": 6.44
   },
   "limit_flag": {
    "kind": "printed",
@@ -242,6 +332,42 @@
    ],
    "volume_cm3": 11.8
   },
+  "presence_bracket": {
+   "kind": "printed",
+   "size_mm": [
+    16.0,
+    20.0,
+    26.0
+   ],
+   "volume_cm3": 3.22
+  },
+  "presence_tab": {
+   "kind": "printed",
+   "size_mm": [
+    10.0,
+    14.0,
+    15.0
+   ],
+   "volume_cm3": 0.69
+  },
+  "probe_holder": {
+   "kind": "printed",
+   "size_mm": [
+    26.0,
+    30.0,
+    36.0
+   ],
+   "volume_cm3": 26.75
+  },
+  "probe_switch_bracket": {
+   "kind": "printed",
+   "size_mm": [
+    8.0,
+    14.0,
+    20.0
+   ],
+   "volume_cm3": 1.04
+  },
   "quick_knob": {
    "kind": "printed",
    "size_mm": [
@@ -250,6 +376,51 @@
     19.6
    ],
    "volume_cm3": 1.88
+  },
+  "scalpel_depth_collar": {
+   "kind": "printed",
+   "size_mm": [
+    6.0,
+    16.0,
+    16.0
+   ],
+   "volume_cm3": 1.03
+  },
+  "scalpel_guard": {
+   "kind": "printed",
+   "size_mm": [
+    14.0,
+    14.0,
+    27.0
+   ],
+   "volume_cm3": 2.8
+  },
+  "scalpel_holder": {
+   "kind": "printed",
+   "size_mm": [
+    26.0,
+    30.0,
+    36.0
+   ],
+   "volume_cm3": 26.51
+  },
+  "sensor_holder": {
+   "kind": "printed",
+   "size_mm": [
+    26.0,
+    30.0,
+    36.0
+   ],
+   "volume_cm3": 25.86
+  },
+  "sensor_shroud": {
+   "kind": "printed",
+   "size_mm": [
+    14.0,
+    16.0,
+    16.0
+   ],
+   "volume_cm3": 1.84
   },
   "specimen_clamp_post": {
    "kind": "printed",
@@ -304,6 +475,33 @@
     40.0
    ],
    "volume_cm3": 3.68
+  },
+  "tool_rack_segment": {
+   "kind": "printed",
+   "size_mm": [
+    50.0,
+    61.0,
+    114.0
+   ],
+   "volume_cm3": 168.96
+  },
+  "wash_tray": {
+   "kind": "printed",
+   "size_mm": [
+    70.0,
+    84.0,
+    90.0
+   ],
+   "volume_cm3": 205.45
+  },
+  "wrist_a_base": {
+   "kind": "printed",
+   "size_mm": [
+    13.0,
+    70.0,
+    125.0
+   ],
+   "volume_cm3": 56.64
   },
   "wrist_cradle": {
    "kind": "printed",
@@ -394,7 +592,7 @@
  "travel_mm": 100.0,
  "work_y_mm": {
   "fixed": 208.0,
-  "wrist": 304.0
+  "wrist": 318.0
  },
  "wrist_setback_mm": 110.0
 }

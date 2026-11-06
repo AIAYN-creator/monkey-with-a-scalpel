@@ -102,13 +102,13 @@ ALLOWED = {
 def moving(pose):
     if pose.variant != "wrist":
         return {}
-    frame = Pos(pose.xc, pose.yax, pose.zh)
+    frame = Pos(pose.xc, pose.yax, pose.zh) * Rot(0, pose.phi, 0)  # the drive of B turns with A
     tool_frame = frame * Rot(pose.theta, 0, 0)
     out = {
         "wrist_sector_b_front": (tool_frame * Pos(SECTOR_X[0], 0, 0) * wrist_sector_b_front(), "printed", "tool"),
         "wrist_sector_b_rear": (tool_frame * Pos(SECTOR_X[0] + LAYER, 0, 0) * wrist_sector_b_rear(), "printed", "tool"),
     }
-    out["wrist_worm_b"] = (frame * Pos(WORM_X, 0, WORM_Z) * Rot(90, 0, 0) * Cylinder(WORM_D / 2, WORM_L), "dummy", "z")
-    out["wrist_motor_b"] = (frame * Pos(WORM_X, MOTOR_Y, WORM_Z) * Box(*MOTOR), "dummy", "z")
-    out["wrist_motor_mount_b"] = (frame * Pos(27.0, 0, 17.0) * wrist_motor_mount_b(), "printed", "z")
+    out["wrist_worm_b"] = (frame * Pos(WORM_X, 0, WORM_Z) * Rot(90, 0, 0) * Cylinder(WORM_D / 2, WORM_L), "dummy", "tool")
+    out["wrist_motor_b"] = (frame * Pos(WORM_X, MOTOR_Y, WORM_Z) * Box(*MOTOR), "dummy", "tool")
+    out["wrist_motor_mount_b"] = (frame * Pos(27.0, 0, 17.0) * wrist_motor_mount_b(), "printed", "tool")
     return out

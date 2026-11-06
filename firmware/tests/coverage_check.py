@@ -31,10 +31,10 @@ def main():
         work = Path(tmp)
         flags = ["-std=c++17", "-O0", "--coverage", f"-I{CORE}"]
         run(["g++", *flags, "-c", str(CORE / "controller.cpp"), "-o", "ctl.o"], work)
-        for name in ("test_controller", "test_fuzz"):
+        for name in ("test_controller", "test_fuzz", "test_tools"):
             run(["g++", *flags, "-c", str(TESTS / f"{name}.cpp"), "-o", f"{name}.o"], work)
             run(["g++", "--coverage", "ctl.o", f"{name}.o", "-o", f"{name}.exe"], work)
-        for name in ("test_controller", "test_fuzz"):
+        for name in ("test_controller", "test_fuzz", "test_tools"):
             run([str(work / f"{name}.exe")], work)
         output = run(["gcov", "-b", "-n", "ctl.gcda"], work)
     match = re.search(r"File '[^']*controller\.cpp'\s*\nLines executed:([\d.]+)% of (\d+)", output)
