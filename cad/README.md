@@ -110,3 +110,13 @@ Y and bottom-Z limit switches, the lever latch of the quick-change interface, th
 the panel lid and wiring, the electronics enclosure, the bracing of the frame, cable management and a wash station.
 
 The STL files are generated and not committed.
+
+## Travel per axis
+
+`params.py` has `TRAVEL_X`, `TRAVEL_Y` and `TRAVEL_Z` (100 mm each by default). A study sets them with the environment variable
+`VERNIER_TRAVEL="x,y,z"` and everything that follows the travel (rails, plates, screws, uprights, base, crossbeam height, switches, the
+sweeps of `system.py`, cable lengths) follows it. With the defaults the build is identical to before. With 200 x 200 x 100 mm the structure
+is fine and every collision is a station that sat outside the reach of the gantry (tool rack, wash tray, control panel, microscope, camera
+B): they have to be laid out again inside the travel (card mech-estaciones). `python cad/mech_review.py` prints the loads, the beam sag and
+twist and the critical speed of each screw for the chosen travel; T8 screws are not enough above about 300 mm.
+
