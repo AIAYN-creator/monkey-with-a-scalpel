@@ -51,7 +51,7 @@ def moving(pose):
         return {}
     if not _CRADLE:
         _CRADLE.append(wrist_cradle())
-    out = {"wrist_yoke": (Pos(pose.xc, pose.yax, pose.zh) * wrist_yoke(pose.setback), "printed", "z")}
-    tool_frame = Pos(pose.xc, pose.yax, pose.zh) * Rot(pose.theta, 0, 0)
-    out["wrist_cradle"] = (tool_frame * _CRADLE[0], "printed", "tool")
+    frame = Pos(pose.xc, pose.yax, pose.zh) * Rot(0, pose.phi, 0)  # the whole wrist turns with A
+    out = {"wrist_yoke": (frame * wrist_yoke(pose.setback), "printed", "tool")}
+    out["wrist_cradle"] = (frame * Rot(pose.theta, 0, 0) * _CRADLE[0], "printed", "tool")
     return out
