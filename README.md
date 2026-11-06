@@ -8,13 +8,21 @@ The goal is to show, stage by stage and with public evidence, that an agent can 
 
 ## Status
 
-Early stage. Phase 0 is under way: the simulated gantry, the self-correction loop and an error model run and are checked by the CI. The controller firmware core exists and is tested on a PC; it has not run on hardware, and there is no hardware yet. A provisional parametric CAD of the whole system (frame, axes, tool head, cameras, controls and an optional wrist) exists too, with geometric checks and a first-order mechanical calculation, but no real measurements. The plan is split into phases, each closed by a joint review with the collaborators before the next one starts.
+Early stage, still in simulation and design: **nothing here has run on hardware, and no real measurement exists yet.** What exists today:
+
+- **Simulation (Phase 0):** the simulated gantry, the self-correction loop and an error model, checked by the CI.
+- **Controller firmware:** a hardware-independent C++ core with limits, a communication watchdog and an abort that withdraws the tool, plus a provisional board layer for an ESP32-S3 with one TMC2209 driver per axis. Both compile (the board layer for `esp32s3`) and are tested on a PC. A mutation check injects 20 faults, one at a time, into the core, the step queue and the pin map, and the tests must catch every one; it runs in the CI.
+- **CAD:** a provisional parametric model of the whole system (30 parts: frame, three axes, an optional active wrist, tool head, cameras, controls, electronics enclosure, cable clips and a heater-plate parameter). It is a registry of modules, so parts can be developed in parallel. It has geometric checks (interferences at the corners of the travel and in the wrist swing, camera line of sight) and a first-order mechanical calculation, but no finite-element analysis and no real measurements. **Do not print yet.**
+- **Wiring map:** cables, conductor counts, estimated lengths and the moving harness, checked against the firmware pins.
+- **Plan:** a card board with a batch of 35 new cards (decisions, software, one module per tool, integration and tests), arranged so independent work can run in parallel without clashing. It is kept outside this repository.
+
+The plan is split into phases, each closed by a joint review with the collaborators before the next one starts. **Phase 1 now covers the whole tool family, not only the syringe: everything must work before Phase 1 closes, and Phase 2 does not start without that.** If a tool is not built for budget or feasibility, it is simulated and its code, model and tests are prepared anyway, and the project records which tool and why.
 
 | Phase | Goal | Material | In this repository |
 |---|---|---|---|
 | 0 | The agent iterates and self-corrects in simulation | Simulation only | Yes |
-| 1 | Move the simulation to real hardware: XYZ gantry, two cameras, syringe actuator | Hardware, no samples | Yes |
-| 2 | Validate with synthetic phantoms (gelatin or agarose) and measure position and volume error | Inert materials | Yes |
+| 1 | Real hardware and a modular tool interface: XYZ gantry, active wrist, cameras and microscope, and every tool module (injector, contact probe, scalpel, drill, fluidics, gripper, cautery, optical sensors), built or simulated; plus the camera-overlay software and the LLM interface | Hardware, inert test pieces | Yes |
+| 2 | Validate every tool and full sequences on synthetic phantoms and substitute materials (gelatin, agarose, synthetic skin), and measure position, volume and force error | Inert materials | Yes |
 | 3 | Regulatory and ethical groundwork | Paperwork only | **No** |
 
 **This repository covers Phases 0-2 only.** Nothing here involves animals or biological tissue. Phase 3 is out of the repository: whether and how it happens depends on the permissions of the university and/or the institution involved, and on written approval from the relevant ethics committee and authority. Nothing in Phase 3 will be carried out without them.
@@ -29,19 +37,21 @@ An error model ([`simulation/error_model.py`](simulation/error_model.py)) and a 
 
 ## What we are building
 
-- **XYZ gantry** that moves the tool, with 100 mm of useful travel per axis; the sample or phantom stays fixed.
-- **Wrist of 0-2 axes** to control the entry angle. On some paths it stays fixed and only the gantry moves; whether it can be an active axis during insertion will be decided from measurements.
-- **Own linear actuator** for the plunger of a precision syringe.
-- **Two cameras** (top and side) calibrated to millimetres, with a USB microscope as backup if the needle tip needs more resolution.
+- **XYZ gantry** that moves the tool, with 100 mm of useful travel per axis; the sample or phantom stays fixed. Printed parts wherever stiffness allows.
+- **Active wrist** (two axes, A and B) to control the entry angle, controlled open loop and watched by the cameras. It is the default design; the earlier fixed-wedge option stays as a fallback.
+- **Interchangeable tools on one quick-change interface**: an injector (precision syringe with its own linear actuator), a contact probe, a scalpel with a depth stop, a micro-drill, aspiration/irrigation/dispensing, a gripper, a cautery and optical sensors (fluorescence, photometry), with a wash station and a tool rack. Only the injector exists as a design so far. The tool contract (not written yet) will have each tool declare its capabilities, its geometry and its safe state, the firmware refuse a tool it does not know, and the tool power be switched by the same contactor as the emergency stop.
+- **Cameras**: two cameras (one oblique, one lateral) calibrated to millimetres, plus a USB microscope as an extra view.
 - **Closed-loop control**: the agent reads the cameras, computes the error, and sends commands to the controller.
-- **Modular by intent**: the system is meant to grow with extra syringes (each with its own wrist), other tools, sensors such as photometry or fluorescence, and a wash station. That is beyond Phases 0-2, but it shapes decisions now: a standard quick-change tool interface, firmware organised by modules, named positions (park, wash, samples) and cameras independent of the tool.
+- **Camera-overlay software** that shows what the cameras see (detected tip, target, error, firmware state, named coordinate frames), and **an LLM interface** that exposes tool capabilities, never raw motors: a deterministic validator without AI checks every proposal against limits, and a person approves it before anything moves. Both are being designed; the code is not written yet.
+- **Modular by design**: a standard tool interface, firmware organised by modules, named positions (park, wash, samples), cameras independent of the tool, and a CAD split into modules that can be worked on in parallel.
 
 There is no fixed pass mark. The minimum acceptable is to beat a steady human hand, whose involuntary tremor is taken here as a working benchmark of 50-100 µm (published figures vary with the task, the metric and whether the wrist is supported, so the benchmark will be defined precisely and cited before any comparison is made). Beyond that, errors in position and volume are driven as low as the hardware allows, and every phase measures and publishes what it achieves with its uncertainty. Dispensed volumes are around 1 µL, measured with an analytical balance, camera images and the syringe scale.
 
 ## Principles
 
 - **Human in the loop.** The agent proposes; a person approves. The agent never acts on hardware by itself.
-- **Safety first.** The design calls for two separate controls: an abort button, handled by the controller rather than the computer, that withdraws the needle along its axis and parks the tool at configured coordinates; and an emergency stop that cuts motor power independently of the computer and the firmware. Limit switches and a communication watchdog complete it. Each layer is tested before the next step.
+- **Safety first.** The design calls for two separate controls: an abort button, handled by the controller rather than the computer, that withdraws the tool along its own axis and parks it at configured coordinates; and an emergency stop that cuts motor and tool power through a contactor, independently of the computer and the firmware. Limit switches, a communication watchdog and a per-tool safe state complete it. The firmware safety rules are covered by tests and a mutation check. Each layer is tested before the next step, and none of this is certified safety software.
+- **The model proposes, the rules check, a person approves.** The LLM never sees raw motors: a validator without AI sits between its proposals and the machine.
 - **Simulation before hardware, inert materials before anything else.** No step is skipped.
 - **Open by default, with limits.** See [PUBLIC_POLICY.md](PUBLIC_POLICY.md).
 
@@ -55,14 +65,15 @@ The agent in this project is Claude. The author has not been able to work on it 
 
 ## Repository layout
 
-`simulation/` exists; the rest is planned and not yet created:
+`simulation/`, `firmware/` and `cad/` exist; `vision/` and `host/` are planned and not yet created:
 
 ```
-simulation/   Phase 0: simulator models and the self-correction loop
-firmware/     Phase 1: controller firmware core (tested on a PC; no board layer yet)
-vision/       Phases 1-2: camera capture, calibration, detection
-cad/          Phase 1: provisional parametric CAD (no real measurements yet; do not print)
-docs/         Decisions and results from each phase
+simulation/   Phase 0: simulator models, the self-correction loop and the error model
+firmware/     core/ (motion and safety, no hardware headers), board/ (ESP32-S3 sketch, pin map), tests/ (host tests and the mutation check)
+cad/          provisional parametric CAD: modules/ (one file per group of parts), layout.py, build.py, wiring.py, mech_review.py (no real measurements; do not print)
+vision/       planned: camera capture, calibration, detection
+host/         planned: control layer on the PC, camera-overlay viewer, LLM interface
+docs/         media and results from each phase
 ```
 
 ## Contributing
@@ -82,6 +93,16 @@ python simulation/sweep_errores.py --runs 20
 ```
 
 To look at a MuJoCo model in an interactive window: `python -m mujoco.viewer --mjcf=path/to/model.xml`.
+
+Firmware tests (a C++17 compiler is needed) and the mutation check:
+
+```
+g++ -std=c++17 -Wall -Wextra -Werror -O2 -Ifirmware/core firmware/core/controller.cpp firmware/tests/test_controller.cpp -o test_controller
+./test_controller
+python firmware/tests/mutation_check.py
+```
+
+The CAD needs `pip install -r requirements-cad.txt`; then `python cad/build.py out` builds the parts and runs every geometric check, and `python cad/wiring.py --check` checks the wiring map against the firmware pins. See [firmware/README.md](firmware/README.md) and [cad/README.md](cad/README.md).
 
 ## License
 
