@@ -17,7 +17,7 @@ from build123d import (
     Rot,
     extrude,
 )
-from parts import hd, hole, interface_cut
+from parts import hd, hole
 
 
 # --- machined parts ------------------------------------------------------------------------------------------
@@ -28,52 +28,6 @@ def base_plate(depth, y_min, holes):
         part -= hole("z", P.M5_CLEAR, P.BASE_T + 2, x, y, -P.BASE_T / 2)
     return part
 
-
-def z_riser():
-    """L bracket from the Y carriage to the Z plate. Origin: centre of the Y carriage, top face (z = 0). Aluminium 6 mm.
-
-    The foot lies on the carriage; the leg hangs at ARM_REACH so the tool clears the end of the Y plate at full travel.
-    """
-    reach = P.ARM_REACH
-    foot = Pos(5.0, (reach + 3.0 - 25.0) / 2, 3.0) * Box(62, reach + 28.0, 6)
-    leg = Pos(5.0, reach, -17.0) * Box(62, 6, 46)  # z from -40 to 6
-    part = foot + leg
-    for x in (-10.0, 10.0):
-        for y in (-10.0, 10.0):
-            part -= hole("z", P.M3_CLEAR, 10, x, y, 3.0)  # carriage pattern
-    for x in (-10.0, 10.0):
-        for z in (-30.0, -10.0):
-            part -= hole("y", P.M3_CLEAR, 10, x, reach, z)  # Z plate pattern, tapped M3 in the plate
-    return part
-
-
-def wrist_yoke(setback):
-    """Fixed part of the active wrist (A axis, tilt about X). Tool frame: pivot axis through the origin, along X.
-
-    Back plate against the Z carriage plate, two arms to the pivot with a 608 bearing pocket each.
-    `setback` is the distance from the pivot axis to the front face of the back plate.
-    """
-    plate_y0, plate_y1 = -(setback + 6.0), -setback
-    plate = Pos(0, (plate_y0 + plate_y1) / 2, 45.5) * Box(70, 6, 125)  # z from -17 to 108
-    part = plate
-    for sign in (-1, 1):
-        arm = Pos(sign * 31.0, (plate_y0 + 8.0) / 2, 0) * Box(8, 8.0 - plate_y0, 34)  # x from 27 to 35
-        part += arm
-        part -= hole("x", P.BEARING_OD + P.HOLE_COMP, P.BEARING_W, sign * (35.0 - P.BEARING_W / 2), 0, 0)
-        part -= hole("x", hd(9.0), 12, sign * 31.0, 0, 0)
-    part -= interface_cut(z0=60.0, y0=(plate_y0 + plate_y1) / 2, length=20)
-    return part
-
-
-def wrist_cradle():
-    """Moving part of the active wrist: plate behind the tool backplate, two cheeks that carry the pivot bolts."""
-    plate = Pos(0, -23.0, 59.0) * Box(52, 6, 102)  # y from -26 to -20, z from 8 to 110
-    part = plate
-    for sign in (-1, 1):
-        part += Pos(sign * 23.0, -9.0, 0) * Box(6, 34, 16)  # y from -26 to 8
-        part -= hole("x", hd(8.0), 10, sign * 23.0, 0, 0)
-    part -= interface_cut(z0=60.0, y0=-23.0, length=20)
-    return part
 
 
 # --- printed parts -------------------------------------------------------------------------------------------
@@ -134,18 +88,6 @@ def control_panel():
         part -= hole("y", 12.5, 10, x, -29.0, 25.0)  # rear cable glands (provisional size)
     return part
 
-
-def z_knob():
-    """Hand wheel for the upper shaft of the dual-shaft Z motor (manual raising of the tool with the power off)."""
-    disc = Pos(0, 0, 6.0) * Cylinder(25.0, 12.0)
-    part = disc
-    for k in range(6):
-        a = math.radians(60 * k)
-        part -= hole("z", 8.0, 14, 15.0 * math.cos(a), 15.0 * math.sin(a), 6.0)
-    part -= hole("z", hd(5.0), 14, 0, 0, 6.0)
-    part -= Pos(0, 3.0, 6.0) * Box(5.2 + 0.4, 1.0, 14)  # D flat of the shaft: replace by measurement
-    part -= hole("x", hd(2.5), 30, 0, 0, 6.0)  # grub screw, heat-set insert
-    return part
 
 
 def quick_knob():
@@ -210,87 +152,6 @@ def electronics_box():
     return Pos(0, 0, 30.0) * Box(200, 95, 60)
 
 
-def cable_clip_2020():
-    """Clip for the 6 mm slot of a 2020 profile with an open saddle for a cable bundle (about 12 mm).
-
-    Local frame: z = 0 at the profile face, +z away from it; the stem and the T head go into the slot (-z).
-    The slot dimensions are typical values to check on the real profile.
-    """
-    stem = Pos(0, 0, -3.0) * Box(5.6, 10.0, 6.0)
-    head = Pos(0, 0, -7.0) * Box(10.2, 10.0, 2.0)
-    saddle = Pos(0, 0, 8.0) * Box(20.0, 10.0, 16.0)
-    part = stem + head + saddle
-    part -= Pos(0, 0, 8.5) * Rot(90, 0, 0) * Cylinder(6.0, 12.0)
-    part -= Pos(0, 0, 14.0) * Box(11.0, 12.0, 10.0)  # open top of the saddle
-    return part
-
-
-ENC_X, ENC_Y, ENC_Z, ENC_WALL = 210.0, 105.0, 85.0, 3.0
-
-
-def electronics_enclosure():
-    """Printed tray for the supply, contactor, drivers and ESP32, open on top (the lid screws into four posts).
-
-    Local frame: centred on x and y, floor at z = 0. The rear wall (-y) carries eleven 12.2 mm holes for panel
-    connectors or cable glands, one per cable of the wiring map (provisional size). Fixing to the base is not
-    designed: four 4.4 mm holes in the floor, reachable with the lid off.
-    """
-    outer = Pos(0, 0, ENC_Z / 2) * Box(ENC_X, ENC_Y, ENC_Z)
-    inner = Pos(0, 0, ENC_WALL + (ENC_Z - ENC_WALL) / 2 + 0.01) * Box(
-        ENC_X - 2 * ENC_WALL, ENC_Y - 2 * ENC_WALL, ENC_Z - ENC_WALL)
-    part = outer - inner
-    px, py = ENC_X / 2 - ENC_WALL - 5.0, ENC_Y / 2 - ENC_WALL - 5.0
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            part += Pos(sx * px, sy * py, ENC_WALL + (ENC_Z - ENC_WALL) / 2) * Cylinder(4.0, ENC_Z - ENC_WALL)
-            part -= hole("z", 2.5, 12.0, sx * px, sy * py, ENC_Z - 6.0)
-    for i in range(11):
-        part -= hole("y", 12.2 + P.HOLE_COMP, 10, -85.0 + 17.0 * i, -ENC_Y / 2 + ENC_WALL / 2, 45.0)
-    for x in (-60.0, 60.0):
-        for y in (-25.0, 25.0):
-            part -= hole("z", hd(P.M4_CLEAR), 10, x, y, ENC_WALL / 2)
-    return part
-
-
-def enclosure_lid():
-    """Lid of the electronics tray with vent slots and four M3 holes. Local frame: z = 0 at the underside."""
-    part = Pos(0, 0, 1.5) * Box(ENC_X, ENC_Y, 3.0)
-    px, py = ENC_X / 2 - ENC_WALL - 5.0, ENC_Y / 2 - ENC_WALL - 5.0
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            part -= hole("z", hd(P.M3_CLEAR), 10, sx * px, sy * py, 1.5)
-    for i in range(8):
-        part -= Pos(-70.0 + 20.0 * i, 0, 1.5) * Box(4.0, 40.0, 10.0)
-    return part
-
-
-def chain_mount():
-    """End bracket for a drag chain (the same part serves the fixed and the moving ends): a foot with two M4 holes
-    and a lug for the chain end link with two M3 holes. Chain inner width 20 mm assumed. NOT placed in the
-    assembly: the chain route and size are not decided.
-    """
-    foot = Pos(0, 0, 3.0) * Box(40.0, 30.0, 6.0)
-    lug = Pos(0, -10.0, 17.0) * Box(30.0, 8.0, 22.0)
-    part = foot + lug
-    for x in (-14.0, 14.0):
-        part -= hole("z", hd(P.M4_CLEAR), 10, x, 8.0, 3.0)
-    for z in (11.0, 23.0):
-        part -= hole("y", hd(P.M3_CLEAR), 20, 0.0, -10.0, z)
-    return part
-
-
-def tool_connector_holder():
-    """Holder for the floating 12-circuit connector of the tool head (cable end, strain relief by zip tie). Pocket
-    22 x 9 mm assumed; NOT placed in the assembly: the connector is not chosen. The tool position comes from the
-    two pins, never from this connector.
-    """
-    plate = Pos(0, 0, 3.0) * Box(40.0, 20.0, 6.0)
-    part = plate - Pos(0, 0, 4.5) * Box(22.4, 9.4, 6.0)
-    for x in (-16.0, 16.0):
-        part -= hole("z", hd(P.M3_CLEAR), 10, x, 0.0, 3.0)
-    part -= Pos(0, 7.5, 3.0) * Box(3.6, 2.2, 10.0)
-    return part
-
 
 def phantom_block():
     """Phantom container with its block: 60 x 60 x PH_HEIGHT, floor at z = 3."""
@@ -298,21 +159,6 @@ def phantom_block():
 
 
 PRINTED_V2 = {
-    "camera_wedge_45": lambda: camera_wedge(45),
-    "limit_switch_bracket": limit_switch_bracket,
-    "limit_flag": limit_flag,
-    "control_panel": control_panel,
-    "z_knob": z_knob,
     "quick_knob": quick_knob,
-    "wrist_cradle": wrist_cradle,
-    "wrist_yoke": lambda: wrist_yoke(110.0),
-    "cable_clip_2020": cable_clip_2020,
-    "electronics_enclosure": electronics_enclosure,
-    "enclosure_lid": enclosure_lid,
-    "chain_mount": chain_mount,
-    "tool_connector_holder": tool_connector_holder,
 }
-MACHINED_V2 = {
-    "z_riser": z_riser,
-    "base_plate": lambda: base_plate(480.0, -130.0, [(-40.0, -40.0)]),
-}
+MACHINED_V2 = {}

@@ -13,13 +13,33 @@ Parametric CAD of the whole system (frame, axes, tool head, cameras, controls, o
 |---|---|
 | `params.py` | Every parameter, with its value and a source tag: `catalog`, `typical` (verify against the datasheet), `assumed` (measure it) or `decided`. |
 | `parts.py` | The tool head and axis parts (version 0.1): 14 printed and 1 machined, plus dummies of the syringe and the actuator. |
-| `system_parts.py` | The parts added in version 0.2 (frame riser, base plate, camera wedge, limit switch bracket and flag, control panel, Z knob, quick-change knob, active wrist) and the dummies (profiles, rails, motors, cameras). |
-| `system.py` | Places everything in world coordinates (two variants: fixed tool, or active wrist) and runs the system checks: interferences at the corners of the travel, wrist swing, camera line of sight. |
+| `system_parts.py` | Legacy parts of version 0.2 that no module owns yet (base plate maker, camera wedge, limit switch bracket and flag, control panel, quick-change knob) and the dummies (profiles, rails, motors, cameras). Do not add new parts here: make a module. |
+| `system.py` | Collects every module into the world frame (two variants: fixed tool, or active wrist), holds the tool head, and runs the system checks: interferences at the corners of the travel, wrist swing, camera line of sight. |
+| `layout.py` | Shared layout: constants, placement helpers and the `Pose` of the moving parts. No parts. |
+| `modules/` | **One file per module.** Each owns its geometry and where it stands in the assembly (see below). |
 | `build.py` | Builds every part, runs all the checks and exports STL files. |
 | `render.py` | Renders overview sheets of the parts, the tool head and the whole system. |
 | `mech_review.py` | First-order hand calculation of masses, moments, deflections, frequencies and the Z screw, with every assumption listed. |
 | `wiring.py` | Provisional wiring map: cables, conductor counts, estimated lengths and the moving harness. Reads the pins from `firmware/board/controller_board/board_config.h` and checks them (`--check`, also in the CI); `--diagram` draws the block diagram. |
 | `params_report.py` | Prints all parameters and their status as a Markdown table. |
+
+## Modules
+
+Every file in `modules/` that does not start with an underscore is a module, found automatically. A module may define:
+
+| Name | What it is |
+|---|---|
+| `PARTS` | `{name: (maker, kind)}`: the parts to make (`printed` or `machined`) |
+| `fixed(variant, setback)` | `{name: (shape, kind)}`: items that never move |
+| `moving(pose)` | `{name: (shape, kind, group)}`: items that move with `x`, `y`, `z` or the `tool` (`pose` is a `layout.Pose`) |
+| `ALLOWED` | pairs of items that overlap by design (a screw in its dummy motor) |
+
+Rules, so that modules can be developed in parallel without stepping on each other:
+
+- Adding or changing a module touches **only its own file**, never `system.py` or `build.py`.
+- A name used by two modules, or by a module and a legacy catalogue, is an error (`ValueError`).
+- Current modules: `frame`, `x_axis`, `z_stage`, `wrist`, `cameras`, `electronics`, `controls`, `work_area`, `cable_chain`, `tool_mount`.
+- The refactor to modules does not change the result: the 30 parts, both assemblies and every check give the same numbers as before.
 
 ## Parts
 

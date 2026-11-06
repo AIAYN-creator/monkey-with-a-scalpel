@@ -12,11 +12,13 @@ import json
 import sys
 from pathlib import Path
 
+import modules
 import params as P
 import parts
 import system as SYS
 import system_parts as SP
 from build123d import export_stl
+from modules import wrist as WRIST
 
 PETG_DENSITY = 1.27  # g/cm3, typical
 WRIST_SETBACK = 110.0  # mm, from the swing search: 100 is the smallest that clears at 30 degrees
@@ -43,7 +45,11 @@ def part_catalogue():
         cat[name] = (make, "machined")
     for name, make in SP.MACHINED_V2.items():
         cat[name] = (make, "machined")
-    cat["wrist_yoke"] = (lambda: SP.wrist_yoke(WRIST_SETBACK), "printed")
+    for name, entry in modules.catalogue().items():
+        if name in cat:
+            raise ValueError(f"part {name!r} is in a legacy catalogue and in a module")
+        cat[name] = entry
+    cat["wrist_yoke"] = (lambda: WRIST.wrist_yoke(WRIST_SETBACK), "printed")
     return cat
 
 

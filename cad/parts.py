@@ -270,8 +270,6 @@ PRINTED = {
     "nut_bracket": nut_bracket,
     "motor_mount_nema17": motor_mount_nema17,
     "bearing_support_608": bearing_support_608,
-    "camera_plate": camera_plate,
-    "phantom_tray": phantom_tray,
     "tolerance_coupon": tolerance_coupon,
 }
 MACHINED = {"stage_plate": stage_plate}
