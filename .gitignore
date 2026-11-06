@@ -51,6 +51,10 @@
 !host/README.md
 !host/coords/
 !host/coords/*.py
+!host/link/
+!host/link/*.py
+!firmware/sim/
+!firmware/sim/sim_main.cpp
 !cad/parts.py
 !cad/build.py
 !cad/render.py

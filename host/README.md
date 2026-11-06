@@ -3,6 +3,24 @@
 Software that runs on the PC next to the controller: coordinates and calibration today; the control layer, the camera-overlay
 viewer and the LLM interface are planned (cards `sw-host`, `sw-overlay`, `sw-llm`). Nothing here has run on hardware.
 
+## `link/` (card `sw-host`)
+
+The PC side of the serial protocol of the controller.
+
+- **`protocol.py`**: parses the replies (`ok ...` or `error:<code>`), the STATUS fields, and builds MOVE lines.
+- **`transport.py`**: `SerialTransport` for a real port (needs `pyserial`, not tested without hardware) and `SimTransport`, which
+  runs the **real controller core on a simulated plant** (`firmware/sim/sim_main.cpp`, built with g++). Time in the simulation only
+  passes when the host asks for it, so tests are deterministic. It can press the ABORT button, cut the motor power and make an axis
+  slip, as after lost steps.
+- **`session.py`**: typed commands, a rejected command raises `CommandRejected` with the error code, every exchange goes to a log,
+  and the **heartbeat**: the controller aborts after 1000 ms of silence, so `start_heartbeat` pings from a thread on a real port and
+  `run_for` does it in simulated time. `silent_for` leaves the controller alone to test the watchdog.
+- **`chainlog.py`**: a log of JSON lines where each entry carries the hash of the one before, so an edited, deleted or reordered
+  entry is detected by `verify`. It protects against accidents and casual edits, not against someone who rewrites the whole file.
+- **`test_link.py`**: protocol parsing, the log (clean, reopened, edited, deleted, swapped, garbage), and a session against the
+  simulated controller: homing, moves, rejected moves, STOP, the watchdog abort, the ABORT button, the ABORT command, a limit fault
+  from lost steps, motor power loss and CLEAR. Run `python host/link/test_link.py`; it is part of the CI.
+
 ## `coords/` (card `sw-coords`)
 
 - **`frames.py`**: a sample frame defined by two landmarks (`SampleFrame.from_landmarks`). The machine frame is the one of
