@@ -27,6 +27,7 @@ class Session:
         self.heartbeat_ms = heartbeat_ms
         self.log = ChainLog(log_path) if log_path else None
         self._lock = threading.Lock()
+        self.lost_beats = 0  # heartbeats that failed; the controller aborts by itself if they keep failing
         self._beat = None
         self._stop_beat = threading.Event()
 
@@ -106,7 +107,7 @@ class Session:
                 try:
                     self.ping()
                 except Exception:  # noqa: BLE001 - a lost heartbeat must not kill the thread; the controller aborts by itself
-                    pass
+                    self.lost_beats += 1
         self._beat = threading.Thread(target=beat, name="heartbeat", daemon=True)
         self._beat.start()
 
