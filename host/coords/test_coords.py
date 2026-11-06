@@ -11,7 +11,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from coords import (  # noqa: E402
+from coords import (
     CalibrationError,
     FrameError,
     SampleFrame,
