@@ -34,6 +34,21 @@ struct AxisConfig {
   bool home_to_min;       // which end the homing switch is at
 };
 
+// A tool the controller knows. The table is generated from the descriptors in tools/ (tools/gen_tool_table.py).
+enum class ToolClass { Injector, Probe, Cutter, Drill, Fluid, Gripper, Cautery, Sensor, Camera };
+
+struct ToolInfo {
+  uint16_t id;            // read from the tool when it is mounted; 0 is never a valid id
+  const char* name;
+  ToolClass cls;
+  double tip_mm[3];       // offset of the working point from the tool origin, in the tool frame
+  double retract_mm;      // withdrawal length along the tool axis on abort
+  uint8_t axes_mask;      // machine axes the tool uses, bit 0 = X ... bit 5 = P
+  double max_current_a;   // largest current of the switched tool power
+  bool cut_on_abort;      // the tool power is cut as soon as an abort starts (drill, cautery, pumps)
+  bool hw_cutoff;         // the power also goes through a hardware cut-off outside the controller
+};
+
 struct Config {
   std::array<AxisConfig, kAxes> axis;
   std::array<double, 5> park;   // X, Y, Z, A, B of the park pose
@@ -42,6 +57,9 @@ struct Config {
   double stop_decel_factor;     // stop and abort decelerate this many times faster than normal moves
   uint32_t watchdog_ms;         // silence from the host that triggers an abort
   uint32_t tick_us;             // period of tick()
+  bool require_tool = false;    // refuse HOME, MOVE and PARK unless a known tool is mounted
+  const ToolInfo* tools = nullptr;  // the known tools
+  unsigned tool_count = 0;
 };
 
 Config default_config();
@@ -51,15 +69,18 @@ struct Inputs {
   std::array<bool, kAxes> limit_max{};
   bool abort_button = false;
   bool motor_power_ok = true;
+  bool tool_present = false;  // the presence sensor of the tool interface
+  uint16_t tool_id = 0;       // the identifier read from the mounted tool, meaningful when tool_present
 };
 
 struct Outputs {
   std::array<int32_t, kAxes> step_delta{};  // steps to emit during this tick
   bool drivers_enabled = false;
+  bool tool_power_enable = false;  // switched power of the tool; the emergency stop contactor still cuts it independently
 };
 
 enum class State { NotHomed, Idle, Moving, Homing, Hold, Aborting, Aborted, Fault, PowerLoss };
-enum class Cause { None, Button, Watchdog, Command, Limit, Power };
+enum class Cause { None, Button, Watchdog, Command, Limit, Power, Tool };
 
 const char* state_name(State state);
 const char* cause_name(Cause cause);
@@ -78,6 +99,8 @@ class Controller {
   Cause cause() const { return cause_; }
   bool homed() const { return homed_; }
   double position(Axis axis) const { return steps_[axis] / config_.axis[axis].steps_per_unit; }
+  const ToolInfo* tool() const { return tool_ready_ ? tool_ : nullptr; }  // the mounted tool, when it is known
+  bool tool_power() const { return tool_power_; }
 
  private:
   struct Waypoint {
@@ -103,6 +126,8 @@ class Controller {
   void request_abort(Cause cause);
   void plan_abort_sequence();
   void enter_fault(Cause cause);
+  void update_tool(const Inputs& in);
+  const ToolInfo* find_tool(uint16_t id) const;
   void begin_homing();
   void tick_homing(const Inputs& in, Outputs& out);
   std::array<double, kAxes> current_units() const;
@@ -120,6 +145,12 @@ class Controller {
   bool rehome_ = false;    // the position can no longer be trusted: homing is required before moving again
   bool power_ok_ = true;   // last reading of the motor power input
   bool armed_ = false;
+  bool tool_present_ = false;   // last reading of the presence sensor
+  uint16_t tool_id_ = 0;        // last identifier read
+  const ToolInfo* tool_ = nullptr;
+  bool tool_ready_ = false;     // a tool is mounted and its id is in the table
+  bool tool_power_ = false;     // the switched tool power is on
+  bool tool_enabled_ = false;   // the host asked for it (TOOL ON); lost on any tool change, fault, power loss or abort that cuts it
   uint32_t last_rx_ms_ = 0;
   int homing_pos_ = 0;
   HomePhase home_phase_ = HomePhase::Approach;

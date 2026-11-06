@@ -1,0 +1,19 @@
+# Tool descriptor (see tools/README.md). Every number is provisional until measured (cards meas-tools and rev-tools). Limits are what the simulation model enforces.
+id: 6
+name: gripper
+class: gripper
+mass_g: 140
+tip_mm: [0, 0, -30]
+retract_mm: 20
+axes: [P]
+power:
+  max_current_a: 0.8
+  hw_cutoff: false
+  cut_on_abort: false
+safe_state: hold the item with the force it had (the jaws are normally closed by a spring) and withdraw along the axis
+capabilities: [grip, release, place_implant]
+limits:
+  max_force_n: 2.0
+  max_open_mm: 10
+  min_close_mm: 0.2
+  max_item_mass_g: 5

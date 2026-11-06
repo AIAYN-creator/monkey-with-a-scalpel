@@ -54,7 +54,13 @@ Rules, so that modules can be developed in parallel without stepping on each oth
   upper bound to about 94 Hz (`mech_review.py`). The printed brackets that hold the braces are the weak point.
 - **Wrist drive:** a worm and a split printed sector (anti-backlash) on the tilt axis, with a NEMA 11, as envelopes. The axis names
   now follow the firmware and the simulation: **B is the rotation about X** (what this CAD draws) and **A the rotation about Y**,
-  the outer axis, which is not designed yet (card `mech-wrist-2`).
+  the outer axis (card `mech-wrist-2`, below).
+- **Wrist axis A (card `mech-wrist-2`):** the whole wrist turns about Y through the needle hub on a printed stage plate (`wrist_a_base`,
+  bearing boss, 14 mm gap, which moves the work area 14 mm back). The sweep now covers A as well as B: **A = +-30 degrees is clean only
+  with the tip at 38 mm or higher; at the lowest tips A is limited to +-5 degrees** (+-6.5 already touches the phantom with B = +30; the
+  contact is the cradle). The firmware must keep to these limits like the minimum tip height. The drive of A is a concept, not
+  geometry: a worm on a 110-tooth arc (about 489 steps per degree at 1/8 microstepping); its motor mount, which has to reach round the
+  yoke plate, is the open part.
 - **Microscope:** fixed, on the left, with a 100 mm working distance. Only the neighbourhood of the target is in its field, and the
   wrist yoke blocks the view when the tool is at the far left.
 - **Specimen fixture:** generic V block and clamp posts, not placed by default. With the wrist the needle has to stay within a few
@@ -100,7 +106,7 @@ unmeasured.
 ## Not designed yet
 
 The nut linkage of each screw to its carriage and the screw supports (motors and screws are envelopes), the
-Y and bottom-Z limit switches, the lever latch of the quick-change interface, the wrist drive and its B axis,
+Y and bottom-Z limit switches, the lever latch of the quick-change interface, the motor mount of the A drive,
 the panel lid and wiring, the electronics enclosure, the bracing of the frame, cable management and a wash station.
 
 The STL files are generated and not committed.

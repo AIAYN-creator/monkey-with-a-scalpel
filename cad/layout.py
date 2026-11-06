@@ -17,6 +17,7 @@ Z_PLATE_CENTRE = Z_PATTERN - Z_PLATE_PATTERN_X
 CARRIAGE_Z_MIN = P.TIP_MIN + 30.0 + HUB_TO_CARRIAGE  # needle tip lowest
 CARRIAGE_Z_MAX = CARRIAGE_Z_MIN + P.TRAVEL
 HALF = P.TRAVEL / 2
+A_GAP = 14.0  # with the wrist, the A stage (a fixed plate and a boss) sits between the carriage plate and the yoke
 
 
 def y_carriage_face(yc):
@@ -27,7 +28,7 @@ def y_carriage_face(yc):
 def y_axis(yc, variant, setback):
     """World y of the needle axis."""
     face = y_carriage_face(yc)
-    return face + (26.0 if variant == "fixed" else setback + 12.0)
+    return face + (26.0 if variant == "fixed" else setback + 12.0 + A_GAP)
 
 
 def work_y(variant, setback):
@@ -61,6 +62,7 @@ class Pose:
     zc: float = CARRIAGE_Z_MIN + HALF
     theta: float = 0.0
     setback: float = 110.0
+    phi: float = 0.0  # wrist axis A, the rotation about Y of the whole wrist (theta is axis B, about X)
 
     @property
     def y_car(self):

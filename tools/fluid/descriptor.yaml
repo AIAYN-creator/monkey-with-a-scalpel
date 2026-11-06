@@ -1,0 +1,19 @@
+# Tool descriptor (see tools/README.md). Every number is provisional until measured (cards meas-tools and rev-tools). Limits are what the simulation model enforces.
+id: 5
+name: fluid
+class: fluid
+mass_g: 100
+tip_mm: [0, 0, -25]
+retract_mm: 20
+axes: []
+power:
+  max_current_a: 0.5
+  hw_cutoff: false
+  cut_on_abort: false
+safe_state: stop the pumps, close the valve on the line and withdraw the nozzle along its axis
+capabilities: [aspirate, irrigate, dispense_adhesive, purge]
+limits:
+  max_volume_ul: 200
+  max_rate_ul_s: 20
+  max_adhesive_ul: 5
+  max_pressure_kpa: 30
