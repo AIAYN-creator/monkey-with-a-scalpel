@@ -43,6 +43,7 @@
 !cad/wiring.py
 !cad/check_report.py
 !cad/test_modules.py
+!cad/tool_check.py
 !cad/expected_report.json
 !cad/layout.py
 !cad/modules/
@@ -53,6 +54,17 @@
 !host/coords/*.py
 !host/link/
 !host/link/*.py
+!assets/
+!assets/brand/
+!assets/brand/*.png
+!assets/brand/*.svg
+!assets/brand/README.md
+!host/toolsim/
+!host/toolsim/*.py
+!host/overlay/
+!host/overlay/*.py
+!host/llm/
+!host/llm/*.py
 !firmware/sim/
 !firmware/core/tool_table.h
 !firmware/tests/test_tools.cpp

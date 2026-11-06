@@ -13,3 +13,10 @@ power:
   cut_on_abort: false
 safe_state: stop the plunger and withdraw the needle along its own axis
 capabilities: [inject, prime, wash]
+limits:
+  syringe_ul: 10
+  stroke_mm: 60
+  lead_mm: 2.0
+  microsteps: 16
+  max_rate_ul_s: 2.0
+  max_dose_ul: 5.0

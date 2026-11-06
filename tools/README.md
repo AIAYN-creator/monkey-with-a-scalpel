@@ -24,6 +24,7 @@ on abort, and treats a tool change while powered or moving as a fault.
 | `power.cut_on_abort` | The power is cut as soon as an abort starts, and stays off until the next `TOOL ON` |
 | `safe_state` | What the tool does on abort, in words |
 | `capabilities` | The operations the tool offers, as a non-empty list of names |
+| `limits` | Optional. The numeric limits the simulation model enforces (a depth, a force, an energy). They do not go into the firmware table; the models in `host/toolsim` and the LLM validator read them |
 
 Rules the generator enforces: a drill or a cautery must have `power.cut_on_abort: true`; a drill, a cautery or a cutter drawing more than
 0.5 A must have `power.hw_cutoff: true`; ids and names are unique.
@@ -38,4 +39,4 @@ python tools/gen_tool_table.py --check    fail if the table is out of date or a 
 python tools/test_gen_tool_table.py       tests of the parser and of the rules
 ```
 
-A new tool is a new folder with its descriptor and a regenerated table; nothing else in the firmware changes.
+A new tool is a new folder with its descriptor and a regenerated table; nothing else in the firmware changes. Its CAD module (`cad/modules/tool_<name>.py`), its model (`host/toolsim/models.py`) and its capability table (`host/llm/capabilities.py`) are checked against the descriptor by `cad/tool_check.py`, `host/toolsim/test_toolsim.py` and `host/llm/test_llm.py`.

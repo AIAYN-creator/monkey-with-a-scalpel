@@ -1,0 +1,19 @@
+# Tool descriptor (see tools/README.md). Every number is provisional until measured (cards meas-tools and rev-tools). Limits are what the simulation model enforces.
+id: 2
+name: probe
+class: probe
+mass_g: 90
+tip_mm: [0, 0, -20]
+retract_mm: 15
+axes: []
+power:
+  max_current_a: 0.2
+  hw_cutoff: false
+  cut_on_abort: false
+safe_state: withdraw the stylus along its own axis; the spring stylus gives way on contact
+capabilities: [touch, find_surface, find_landmark]
+limits:
+  force_stop_n: 0.5
+  approach_mm_s: 2.0
+  max_travel_mm: 15
+  trigger_repeatability_um: 10

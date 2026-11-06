@@ -1,0 +1,20 @@
+# Tool descriptor (see tools/README.md). Every number is provisional until measured (cards meas-tools and rev-tools). Limits are what the simulation model enforces.
+id: 4
+name: drill
+class: drill
+mass_g: 160
+tip_mm: [0, 0, -30]
+retract_mm: 30
+axes: []
+power:
+  max_current_a: 2.0
+  hw_cutoff: true
+  cut_on_abort: true
+safe_state: cut the motor power in the same tick as the abort, then withdraw the bit along its axis
+capabilities: [drill, set_depth_stop]
+limits:
+  max_depth_mm: 3.0
+  max_rpm: 20000
+  max_feed_mm_s: 0.5
+  bit_diameter_mm: 0.8
+  max_run_s: 60

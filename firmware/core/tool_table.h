@@ -7,6 +7,13 @@ namespace fw {
 
 inline constexpr ToolInfo kToolTable[] = {
     {1, "injector", ToolClass::Injector, {0.000, 0.000, -30.000}, 20.000, 32, 1.000, false, false},
+    {2, "probe", ToolClass::Probe, {0.000, 0.000, -20.000}, 15.000, 0, 0.200, false, false},
+    {3, "scalpel", ToolClass::Cutter, {0.000, 0.000, -25.000}, 25.000, 0, 0.300, false, false},
+    {4, "drill", ToolClass::Drill, {0.000, 0.000, -30.000}, 30.000, 0, 2.000, true, true},
+    {5, "fluid", ToolClass::Fluid, {0.000, 0.000, -25.000}, 20.000, 0, 0.500, false, false},
+    {6, "gripper", ToolClass::Gripper, {0.000, 0.000, -30.000}, 20.000, 32, 0.800, false, false},
+    {7, "cautery", ToolClass::Cautery, {0.000, 0.000, -25.000}, 25.000, 0, 1.500, true, true},
+    {8, "sensor", ToolClass::Sensor, {0.000, 0.000, -15.000}, 15.000, 0, 0.400, false, false},
 };
 inline constexpr unsigned kToolTableSize = sizeof(kToolTable) / sizeof(kToolTable[0]);
 
