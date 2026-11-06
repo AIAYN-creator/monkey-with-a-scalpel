@@ -8,5 +8,5 @@ FQBN="${1:-esp32:esp32:esp32s3}"
 STAGE="$(mktemp -d)/controller_board"
 mkdir -p "$STAGE"
 cp firmware/board/controller_board/* "$STAGE"/
-cp firmware/core/controller.cpp firmware/core/controller.h firmware/core/step_queue.h "$STAGE"/
+cp firmware/core/controller.cpp firmware/core/*.h "$STAGE"/
 arduino-cli compile --fqbn "$FQBN" --warnings all "$STAGE"

@@ -54,6 +54,14 @@
 !host/link/
 !host/link/*.py
 !firmware/sim/
+!firmware/core/tool_table.h
+!firmware/tests/test_tools.cpp
+!tools/
+!tools/README.md
+!tools/gen_tool_table.py
+!tools/test_gen_tool_table.py
+!tools/*/
+!tools/*/descriptor.yaml
 !firmware/sim/sim_main.cpp
 !cad/parts.py
 !cad/build.py

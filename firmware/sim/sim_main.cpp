@@ -7,10 +7,12 @@
 //   @button 0|1      the ABORT button input
 //   @power 0|1       the motor power input
 //   @slip AXIS MM    the axis (X Y Z A B P) slips by MM under the controller, as after lost steps
+//   @tool ID         mount the tool with this id (0 removes it); the id is what the tool interface would read
 //   @phys            the physical position of every axis
 //   @time            the simulated time in ms
 //   @quit            exit
-// The switches sit 2 units beyond the soft limits, as in the unit tests.
+// The switches sit 2 units beyond the soft limits, as in the unit tests. Started with --require-tool, the controller refuses to
+// home or move without a known tool.
 #include <cstdio>
 #include <iostream>
 #include <sstream>
@@ -28,6 +30,8 @@ struct Plant {
   std::array<double, kAxes> phys{17.3, -40.0, 30.0, 10.0, -5.0, 30.0};
   bool button = false;
   bool power = true;
+  bool tool_present = false;
+  uint16_t tool_id = 0;
   uint32_t ms = 0;
 
   Inputs inputs() const {
@@ -38,10 +42,14 @@ struct Plant {
     }
     in.abort_button = button;
     in.motor_power_ok = power;
+    in.tool_present = tool_present;
+    in.tool_id = tool_id;
     return in;
   }
+  bool tool_power = false;
   void tick() {
     const Outputs out = ctl.tick(ms, inputs());
+    tool_power = out.tool_power_enable;
     for (int i = 0; i < kAxes; ++i) phys[i] += out.step_delta[i] / cfg.axis[i].steps_per_unit;
     ++ms;
   }
@@ -55,8 +63,14 @@ int axis_index(char c) {
 
 }  // namespace
 
-int main() {
+int main(int argc, char** argv) {
+  Config config = default_config();
+  for (int i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == "--require-tool") config.require_tool = true;
+  }
   Plant plant;
+  plant.cfg = config;
+  plant.ctl = Controller(config);
   std::string line;
   while (std::getline(std::cin, line)) {
     while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) line.pop_back();
@@ -93,6 +107,14 @@ int main() {
         plant.phys[i] += mm;
         std::cout << "slipped" << std::endl;
       }
+    } else if (word == "@tool") {
+      int id = 0;
+      in >> id;
+      plant.tool_present = id != 0;
+      plant.tool_id = static_cast<uint16_t>(id);
+      std::cout << "tool " << id << std::endl;
+    } else if (word == "@toolpower") {
+      std::cout << (plant.tool_power ? 1 : 0) << std::endl;
     } else if (word == "@phys") {
       char buffer[200];
       std::snprintf(buffer, sizeof buffer, "x=%.4f y=%.4f z=%.4f a=%.3f b=%.3f p=%.4f", plant.phys[X], plant.phys[Y], plant.phys[Z],

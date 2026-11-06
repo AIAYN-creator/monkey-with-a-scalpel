@@ -65,6 +65,17 @@ class Session:
     def park(self):
         return self.send("PARK")
 
+    def tool(self):
+        """The tool interface: name (none, unknown or the tool), id, ready and power."""
+        fields = self.send("TOOL").fields
+        return {"tool": fields["tool"], "id": int(fields["id"]), "ready": fields["ready"] == "1", "power": fields["power"] == "1"}
+
+    def tool_on(self):
+        return self.send("TOOL ON")
+
+    def tool_off(self):
+        return self.send("TOOL OFF")
+
     def stop(self):
         return self.send("STOP")
 

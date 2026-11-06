@@ -190,6 +190,61 @@ def test_session(exe, tmp):
           "the log keeps the commands and the error replies")
 
 
+def test_tools(exe, tmp):
+    print("tool interface against the simulated controller")
+    transport = SimTransport(exe, require_tool=True)
+    session = Session(transport, log_path=tmp / "tools.jsonl")
+    try:
+        transport.advance(3)
+        for command in (session.home, lambda: session.move(x=1), session.park):
+            try:
+                command()
+                check(False, "a command that moves must be rejected without a tool")
+            except CommandRejected as error:
+                check(error.code == "tool", "without a tool, HOME, MOVE and PARK are rejected with tool")
+        check(session.tool() == {"tool": "none", "id": 0, "ready": False, "power": False}, "TOOL reports no tool")
+        check(session.status()["state"] == "not_homed", "STATUS still works without a tool")
+
+        transport.mount(99)
+        transport.advance(3)
+        info = session.tool()
+        check(info["tool"] == "unknown" and info["id"] == 99 and not info["ready"], "an unknown tool is reported as unknown")
+        try:
+            session.tool_on()
+            check(False, "an unknown tool must not be switched on")
+        except CommandRejected as error:
+            check(error.code == "tool", "TOOL ON of an unknown tool is rejected")
+        check(not transport.tool_power(), "and its power stays off")
+
+        transport.mount(1)  # the injector of the table
+        transport.advance(3)
+        info = session.tool()
+        check(info["tool"] == "injector" and info["ready"] and not info["power"], "a known tool is ready but not powered")
+        session.tool_on()
+        transport.advance(3)
+        check(transport.tool_power() and session.tool()["power"], "TOOL ON powers it")
+        session.home()
+        status = session.wait_settled()
+        check(status["state"] == "idle" and status["homed"], "with a tool, the machine homes")
+
+        session.move(x=5, feed=20)
+        session.run_for(300)
+        session.abort()
+        status = session.wait_settled()
+        check(status["state"] == "aborted" and transport.tool_power(), "the injector keeps its power through an abort")
+        session.clear()
+
+        transport.mount(0)  # removed while powered
+        transport.advance(3)
+        status = session.status()
+        check(status["state"] == "fault" and status["cause"] == "tool", "removing the tool while it is powered is a fault")
+        check(not transport.tool_power(), "and its power is cut")
+    finally:
+        session.close()
+    ok, count, _ = ChainLog.verify(tmp / "tools.jsonl")
+    check(ok and count > 15, f"the tool session is in a log that verifies ({count} entries)")
+
+
 def main():
     test_protocol()
     with tempfile.TemporaryDirectory() as tmp:
@@ -201,6 +256,7 @@ def main():
             print("cannot build the simulated controller:", error)
             return 2
         test_session(exe, tmp)
+        test_tools(exe, tmp)
     print("LINK OK" if not FAILURES else f"LINK FAILED: {len(FAILURES)} checks")
     return 1 if FAILURES else 0
 

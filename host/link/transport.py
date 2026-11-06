@@ -47,8 +47,9 @@ def build_simulator(output_dir):
 class SimTransport:
     """The simulated controller as a subprocess. Time only passes when `advance` is called, so tests are deterministic."""
 
-    def __init__(self, executable):
-        self._process = subprocess.Popen([str(executable)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
+    def __init__(self, executable, require_tool=False):
+        command = [str(executable)] + (['--require-tool'] if require_tool else [])
+        self._process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True, bufsize=1)
 
     def request(self, line):
         if self._process.poll() is not None:
@@ -72,6 +73,14 @@ class SimTransport:
 
     def slip(self, axis, mm):
         return self.request(f"@slip {axis.upper()} {mm}")
+
+    def mount(self, tool_id):
+        """Mounts the tool with this id (0 removes it): what the tool interface would read."""
+        return self.request(f"@tool {int(tool_id)}")
+
+    def tool_power(self):
+        """True while the controller enables the switched tool power."""
+        return self.request("@toolpower") == "1"
 
     def physical(self):
         return {key: float(value) for key, value in (item.split("=") for item in self.request("@phys").split())}

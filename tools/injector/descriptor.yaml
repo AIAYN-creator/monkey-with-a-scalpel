@@ -1,0 +1,15 @@
+# Tool descriptor: the single source of the firmware tool table, the host plugin and the integration checks.
+# Schema and rules: tools/README.md. Every number is provisional until measured (cards meas-tools and rev-tools).
+id: 1
+name: injector
+class: injector
+mass_g: 200
+tip_mm: [0, 0, -30]
+retract_mm: 20
+axes: [P]
+power:
+  max_current_a: 1.0
+  hw_cutoff: false
+  cut_on_abort: false
+safe_state: stop the plunger and withdraw the needle along its own axis
+capabilities: [inject, prime, wash]
