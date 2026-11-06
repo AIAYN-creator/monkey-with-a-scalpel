@@ -41,6 +41,10 @@
 !cad/layout.py
 !cad/modules/
 !cad/modules/*.py
+!host/
+!host/README.md
+!host/coords/
+!host/coords/*.py
 !cad/parts.py
 !cad/build.py
 !cad/render.py
