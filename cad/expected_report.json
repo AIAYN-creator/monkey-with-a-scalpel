@@ -170,6 +170,24 @@
    ],
    "volume_cm3": 11.78
   },
+  "latch_hook": {
+   "kind": "printed",
+   "size_mm": [
+    14.0,
+    16.0,
+    24.0
+   ],
+   "volume_cm3": 3.91
+  },
+  "latch_lever": {
+   "kind": "printed",
+   "size_mm": [
+    8.0,
+    20.0,
+    70.0
+   ],
+   "volume_cm3": 6.44
+  },
   "limit_flag": {
    "kind": "printed",
    "size_mm": [
@@ -242,6 +260,24 @@
    ],
    "volume_cm3": 11.8
   },
+  "presence_bracket": {
+   "kind": "printed",
+   "size_mm": [
+    16.0,
+    20.0,
+    26.0
+   ],
+   "volume_cm3": 3.22
+  },
+  "presence_tab": {
+   "kind": "printed",
+   "size_mm": [
+    10.0,
+    14.0,
+    15.0
+   ],
+   "volume_cm3": 0.69
+  },
   "quick_knob": {
    "kind": "printed",
    "size_mm": [
@@ -304,6 +340,15 @@
     40.0
    ],
    "volume_cm3": 3.68
+  },
+  "tool_rack_segment": {
+   "kind": "printed",
+   "size_mm": [
+    50.0,
+    61.0,
+    114.0
+   ],
+   "volume_cm3": 168.96
   },
   "wrist_cradle": {
    "kind": "printed",
