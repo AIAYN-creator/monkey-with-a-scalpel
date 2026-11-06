@@ -1,5 +1,7 @@
 #include "controller.h"
 
+#include "tool_table.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -48,6 +50,8 @@ Config default_config() {
   c.stop_decel_factor = 4.0;
   c.watchdog_ms = 1000;
   c.tick_us = 1000;
+  c.tools = kToolTable;
+  c.tool_count = kToolTableSize;
   return c;
 }
 
@@ -74,8 +78,33 @@ const char* cause_name(Cause cause) {
     case Cause::Command: return "command";
     case Cause::Limit: return "limit";
     case Cause::Power: return "power";
+    case Cause::Tool: return "tool";
   }
   return "unknown";
+}
+
+const ToolInfo* Controller::find_tool(uint16_t id) const {
+  if (id == 0) return nullptr;
+  for (unsigned i = 0; i < config_.tool_count; ++i) {
+    if (config_.tools[i].id == id) return &config_.tools[i];
+  }
+  return nullptr;
+}
+
+// Reads the tool interface. A tool is ready when it is mounted and known. Changing the tool while its power is on, or while the
+// machine is moving, homing or aborting, is a fault: the tool must be changed at rest with its power off.
+void Controller::update_tool(const Inputs& in) {
+  const bool changed = in.tool_present != tool_present_ || (in.tool_present && in.tool_id != tool_id_);
+  if (changed) {
+    const bool busy = state_ == State::Moving || state_ == State::Homing || state_ == State::Aborting;
+    const bool was_powered = tool_power_;
+    tool_present_ = in.tool_present;
+    tool_id_ = in.tool_id;
+    tool_ = in.tool_present ? find_tool(in.tool_id) : nullptr;
+    tool_ready_ = tool_ != nullptr;
+    tool_enabled_ = false;  // a new or removed tool is never powered without a fresh TOOL ON
+    if ((was_powered || busy) && state_ != State::Fault && state_ != State::PowerLoss) enter_fault(Cause::Tool);
+  }
 }
 
 Controller::Controller(const Config& config) : config_(config) {}
@@ -196,7 +225,7 @@ void Controller::plan_abort_sequence() {
   const double b = p[B] * kPi / 180.0;
   // Needle direction is R*(0,0,-1) with R = Ry(a)*Rx(b); the withdrawal is the opposite.
   const double u[3] = {std::cos(b) * std::sin(a), -std::sin(b), std::cos(b) * std::cos(a)};
-  double s = config_.retract_mm;
+  double s = tool_ready_ && tool_->retract_mm > 0.0 ? tool_->retract_mm : config_.retract_mm;
   for (int i = 0; i <= Z; ++i) {
     if (std::fabs(u[i]) < 1e-9) continue;
     const double room = (u[i] > 0 ? config_.axis[i].max_pos - p[i] : config_.axis[i].min_pos - p[i]) / u[i];
@@ -280,11 +309,17 @@ Outputs Controller::tick(uint32_t now_ms, const Inputs& in) {
     cause_ = Cause::Power;
     state_ = State::PowerLoss;
   }
-  if (state_ == State::PowerLoss) return out;
+  if (state_ == State::PowerLoss) {
+    tool_power_ = false;
+    tool_enabled_ = false;
+    update_tool(in);  // keep the reading of the interface up to date; there is no power to cut
+    return out;
+  }
 
   if (in.abort_button) request_abort(Cause::Button);
   if (armed_ && homed_ && now_ms - last_rx_ms_ > config_.watchdog_ms) request_abort(Cause::Watchdog);
 
+  update_tool(in);
   out.drivers_enabled = state_ != State::Fault;
   const std::array<int32_t, kAxes> before = steps_;
 
@@ -322,6 +357,13 @@ Outputs Controller::tick(uint32_t now_ms, const Inputs& in) {
     }
   }
   if (state_ == State::Aborting || abort_sequence_) out.drivers_enabled = state_ != State::Fault;
+  // The tool power is on only while the host asked for it, a known tool is mounted and the motor supply is present. A fault, a
+  // power loss, or an abort of a tool that cuts its power on abort, withdraws the request: it takes a new TOOL ON to power it again.
+  if (state_ == State::Fault || (tool_ready_ && tool_->cut_on_abort && (state_ == State::Aborting || state_ == State::Aborted))) {
+    tool_enabled_ = false;
+  }
+  tool_power_ = tool_enabled_ && tool_ready_ && power_ok_;
+  out.tool_power_enable = tool_power_;
   return out;
 }
 
@@ -344,24 +386,46 @@ std::string Controller::handle_line(const std::string& line, uint32_t now_ms) {
   if (tokens.empty()) return "error:syntax";
   const std::string command = tokens.front();
   tokens.pop_front();
-  char buffer[200];
+  char buffer[280];
 
   if (command == "PING") return "ok pong";
 
   if (command == "STATUS") {
-    std::snprintf(buffer, sizeof buffer, "ok state=%s homed=%d cause=%s x=%.4f y=%.4f z=%.4f a=%.3f b=%.3f p=%.4f",
+    std::snprintf(buffer, sizeof buffer, "ok state=%s homed=%d cause=%s x=%.4f y=%.4f z=%.4f a=%.3f b=%.3f p=%.4f tool=%s",
                   state_name(state_), homed_ ? 1 : 0, cause_name(cause_), position(X), position(Y), position(Z),
-                  position(A), position(B), position(P));
+                  position(A), position(B), position(P), tool_ready_ ? tool_->name : (tool_present_ ? "unknown" : "none"));
+    return buffer;
+  }
+
+  if (command == "TOOL") {
+    if (!tokens.empty()) {
+      if (tokens.front() == "OFF") {
+        tool_enabled_ = false;
+      } else if (tokens.front() == "ON") {
+        if (!tool_ready_) return "error:tool";
+        if (state_ == State::Moving || state_ == State::Homing || state_ == State::Aborting || state_ == State::Fault ||
+            state_ == State::PowerLoss) {
+          return "error:state";
+        }
+        tool_enabled_ = true;
+      } else {
+        return "error:syntax";
+      }
+    }
+    std::snprintf(buffer, sizeof buffer, "ok tool=%s id=%u ready=%d power=%d", tool_ready_ ? tool_->name : (tool_present_ ? "unknown" : "none"),
+                  static_cast<unsigned>(tool_present_ ? tool_id_ : 0), tool_ready_ ? 1 : 0, tool_power_ ? 1 : 0);
     return buffer;
   }
 
   if (command == "HOME") {
+    if (config_.require_tool && !tool_ready_) return "error:tool";
     if (state_ != State::NotHomed && state_ != State::Idle) return "error:state";
     begin_homing();
     return "ok homing";
   }
 
   if (command == "MOVE") {
+    if (config_.require_tool && !tool_ready_) return "error:tool";
     if (!homed_) return "error:not_homed";
     if (state_ == State::Moving) return "error:busy";
     if (state_ != State::Idle && state_ != State::Hold) return "error:state";
@@ -390,6 +454,7 @@ std::string Controller::handle_line(const std::string& line, uint32_t now_ms) {
   }
 
   if (command == "PARK") {
+    if (config_.require_tool && !tool_ready_) return "error:tool";
     if (!homed_) return "error:not_homed";
     if (state_ != State::Idle && state_ != State::Hold) return "error:state";
     std::array<double, kAxes> up = current_units();

@@ -65,8 +65,23 @@ tilt, degrees) and `P` (plunger, mm).
 | `STOP` | Decelerates to a halt and holds. The tool stays where it is. |
 | `ABORT` | Stops, withdraws the needle along its own axis, raises and parks. |
 | `CLEAR` | Leaves `aborted`, `fault` or `power_loss`. After a fault or a power loss, homing is required again. |
+| `TOOL [ON\|OFF]` | The tool interface: `ok tool=<name\|none\|unknown> id=<n> ready=<0\|1> power=<0\|1>`. `TOOL ON` asks for the switched tool power of a known tool; `TOOL OFF` withdraws the request. |
 
-Error codes: `syntax`, `unknown_command`, `not_homed`, `busy`, `state`, `limit`, `power`.
+Error codes: `syntax`, `unknown_command`, `not_homed`, `busy`, `state`, `limit`, `power`, `tool`. `STATUS` ends with `tool=<name>`.
+
+## Tool interface
+
+The controller reads a presence sensor and an identifier from the mounted tool (`Inputs::tool_present`, `tool_id`) and knows the tools of
+the generated table `core/tool_table.h` (source: `tools/*/descriptor.yaml`, see `tools/README.md`).
+
+- With `Config::require_tool` set, `HOME`, `MOVE` and `PARK` are refused with `error:tool` unless a known tool is mounted. The board layer
+  does not set it yet: the connector, the presence sensor and the identification line are not chosen.
+- The switched tool power (`Outputs::tool_power_enable`) is on only while the host asked for it with `TOOL ON`, a known tool is mounted and
+  the motor supply is present. A fault, a power loss, or an abort of a tool that cuts its power on abort withdraws the request, and it
+  takes a new `TOOL ON` to power the tool again. The emergency stop contactor cuts the tool power independently of all this.
+- An abort withdraws the tool by its own `retract_mm`.
+- Mounting, removing or swapping a tool while its power is on, or while the machine moves, homes or aborts, is a fault (`cause=tool`).
+  A tool is changed at rest with `TOOL OFF`.
 
 ## Safety behaviour
 
