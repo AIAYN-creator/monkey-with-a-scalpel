@@ -28,7 +28,8 @@ fw::Config make_config() {
   fw::Config c = fw::default_config();
   for (int axis : {fw::X, fw::Y, fw::Z}) c.axis[axis].steps_per_unit = board::kLinearStepsPerMm;
   c.axis[fw::P].steps_per_unit = board::kLinearStepsPerMm;  // placeholder: depends on the actuator, to measure
-  // Wrist (A, B) steps per degree and the plunger lead are illustrative: set them from the real drive.
+  c.axis[fw::B].steps_per_unit = board::kWristBStepsPerDeg;  // worm drive of the CAD (axis B, rotation about X)
+  // The steps per degree of the outer wrist axis A and the plunger lead are illustrative: set them from the real drive.
   return c;
 }
 

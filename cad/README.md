@@ -52,8 +52,9 @@ Rules, so that modules can be developed in parallel without stepping on each oth
 - **Stiffening:** a second 2020 profile under the crossbeam, joined by printed plates, and two diagonal braces. With assumed joint
   stiffness the torsion of the crossbeam falls from about 270 to about 80 um at the tip and the sway mode rises from an unreliable
   upper bound to about 94 Hz (`mech_review.py`). The printed brackets that hold the braces are the weak point.
-- **Wrist drive:** a worm and a printed sector on the tilt axis, with a NEMA 11, as envelopes. The second wrist axis is a concept
-  only; the axis called A in the CAD is the rotation about X, while the firmware's A is about Y. They must be reconciled.
+- **Wrist drive:** a worm and a split printed sector (anti-backlash) on the tilt axis, with a NEMA 11, as envelopes. The axis names
+  now follow the firmware and the simulation: **B is the rotation about X** (what this CAD draws) and **A the rotation about Y**,
+  the outer axis, which is not designed yet (card `mech-wrist-2`).
 - **Microscope:** fixed, on the left, with a 100 mm working distance. Only the neighbourhood of the target is in its field, and the
   wrist yoke blocks the view when the tool is at the far left.
 - **Specimen fixture:** generic V block and clamp posts, not placed by default. With the wrist the needle has to stay within a few

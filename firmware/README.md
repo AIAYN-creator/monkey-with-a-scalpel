@@ -18,7 +18,7 @@ wire reads as triggered, and a missing motor-power signal reads as power lost. T
 timer overruns.
 
 - 1/8 microstepping gives 800 steps/mm (1.25 um) and 16 kHz at 20 mm/s, under the 20 kHz limit of the pulse timer.
-- A and B wrist drive and plunger steps per unit are placeholders until the mechanics exist.
+- The steps per degree of the wrist axis B come from the worm drive of the CAD (80-tooth sector, about 355.6 steps per degree at 1/8 microstepping). The outer axis A and the plunger steps per unit are placeholders until the mechanics exist.
 - The step pulse interrupt runs from flash cache; if it misbehaves during flash writes, move it to IRAM.
 - On the bench, fit the ABORT button and the power-ok signal or the controller will (correctly) refuse to move.
 

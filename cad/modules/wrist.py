@@ -1,4 +1,4 @@
-"""Active wrist (A axis, tilt about X, pivot at the needle hub plane): the fixed yoke and the moving cradle.
+"""Active wrist, axis B (tilt about X, pivot at the needle hub plane; the names follow the firmware): the fixed yoke and the moving cradle.
 
 Only present in the "wrist" variant of the assembly.
 """
@@ -10,7 +10,7 @@ DEFAULT_SETBACK = 110.0  # mm, from the swing search: 100 is the smallest that c
 
 
 def wrist_yoke(setback):
-    """Fixed part of the active wrist (A axis, tilt about X). Tool frame: pivot axis through the origin, along X.
+    """Fixed part of the active wrist (B axis, tilt about X). Tool frame: pivot axis through the origin, along X.
 
     Back plate against the Z carriage plate, two arms to the pivot with a 608 bearing pocket each.
     `setback` is the distance from the pivot axis to the front face of the back plate.

@@ -7,7 +7,7 @@ Z up. The tool hangs on the Z carriage; the phantom stays fixed.
     build_moving(variant, ...)     parts that move with x, y, z of the axes (and the wrist angle)
 
 Variants: "fixed" (tool bolted to the Z carriage plate, optional fixed-angle wedge not drawn) and "wrist"
-(active wrist, A axis, tilt about X at the plane of the needle hub).
+(active wrist, B axis as in the firmware: tilt about X at the plane of the needle hub).
 Every position is provisional; the checks below are the only verification.
 """
 import math
@@ -190,7 +190,7 @@ def sweep_wrist(setback, angles=(-P.WRIST_MAX, 0.0, P.WRIST_MAX), zcs=None, posi
                 items.update({k: v[0] for k, v in fixed.items()})
                 others = set(items) - swing
                 for k, v in interferences(items, only_cross=(swing, others)).items():
-                    found[f"x={xc:+.0f} y={yc:+.0f} zc={zc:.0f} A={th:+.0f}: {k}"] = v
+                    found[f"x={xc:+.0f} y={yc:+.0f} zc={zc:.0f} B={th:+.0f}: {k}"] = v
     return found
 
 
@@ -225,7 +225,7 @@ WRIST_TILT_MIN_TIP = 20.0 + P.HEATER_T  # 8 mm below the phantom surface (28 mm 
 
 
 def sweep_wrist_all(setback):
-    """The wrist swing over the whole range and the corners of the XY travel, with the rule that A = +30 needs the tip at or above
+    """The wrist swing over the whole range and the corners of the XY travel, with the rule that B = +30 needs the tip at or above
     WRIST_TILT_MIN_TIP and the tool never goes below WRIST_MIN_ZC."""
     positions = ((0.0, 0.0), (-HALF, -HALF), (HALF, -HALF), (-HALF, HALF), (HALF, HALF))
     zc_rule = WRIST_TILT_MIN_TIP + 30.0 + HUB_TO_CARRIAGE

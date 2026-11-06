@@ -1,6 +1,7 @@
 // Host tests for the hardware-independent parts of the board layer: the step queue and the pin map.
 //   g++ -std=c++17 -Wall -Wextra -Werror -O2 -Ifirmware/core -Ifirmware/board/controller_board firmware/tests/test_board.cpp -o test_board
 //   ./test_board
+#include <cmath>
 #include <cstdio>
 
 #include "board_config.h"
@@ -136,6 +137,7 @@ void test_pin_map() {
   CHECK(board::forbidden(33));
   CHECK(!board::forbidden(4));
   CHECK(board::kLinearStepsPerMm == 800.0);
+  CHECK(std::fabs(board::kWristBStepsPerDeg - 355.5556) < 1e-3);  // 1600 microsteps per turn, 80 teeth
   // 20 mm/s must fit under half of the timer rate
   CHECK(20.0 * board::kLinearStepsPerMm <= board::kPulseTimerHz / 2.0);
   CHECK(board::kTickDivider * 1000 == board::kPulseTimerHz);

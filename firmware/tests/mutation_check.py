@@ -44,6 +44,7 @@ MUTANTS = [
     ("step_queue", "step queue direction inverted", "forward_[axis] = pending_[axis] > 0;", "forward_[axis] = pending_[axis] < 0;"),
     ("board_config", "forbidden pin 0 allowed", "pin == 0 || pin == 3", "pin == 3"),
     ("board_config", "microstepping changed without the tests noticing", "constexpr double kMicrosteps = 8.0;", "constexpr double kMicrosteps = 16.0;"),
+    ("board_config", "wrist worm ratio changed without the tests noticing", "constexpr double kWristBTeeth = 80.0;", "constexpr double kWristBTeeth = 40.0;"),
     ("board_config", "duplicate pin allowed by the static check", "constexpr std::array<int, kAxes> kDirPin{17, 18, 8, 9, 10, 11};", "constexpr std::array<int, kAxes> kDirPin{4, 18, 8, 9, 10, 11};"),
 ]
 

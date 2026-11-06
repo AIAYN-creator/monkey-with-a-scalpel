@@ -31,6 +31,11 @@ constexpr int kLedPin = 47;
 constexpr double kMicrosteps = 8.0;
 constexpr double kLinearStepsPerMm = 200.0 * kMicrosteps / 2.0;  // 800 steps/mm = 1.25 um per step
 
+// Wrist axis B (rotation about X): a single-start worm on an 80-tooth sector (cad/modules/wrist_drive.py). The outer axis A is not
+// designed yet and keeps the placeholder of the core.
+constexpr double kWristBTeeth = 80.0;
+constexpr double kWristBStepsPerDeg = 200.0 * kMicrosteps * kWristBTeeth / 360.0;  // about 355.6 steps per degree
+
 // The step interrupt runs at this rate; a pulse is one period high and one low, so the largest step rate per axis
 // is half of it. 20 mm/s at 800 steps/mm needs 16 kHz.
 constexpr int kPulseTimerHz = 40000;
