@@ -83,7 +83,7 @@ jobs:
           arduino-cli core update-index
           arduino-cli core install esp32:esp32@3.3.12
       - name: Compile the board layer for the ESP32-S3 with every warning on
-        run: firmware/board/build.sh esp32:esp32:esp32s3
+        run: bash firmware/board/build.sh esp32:esp32:esp32s3
 
   python-checks:
     name: python-checks
