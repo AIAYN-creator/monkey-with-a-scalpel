@@ -1,0 +1,400 @@
+{
+ "interference_keys": {
+  "fixed_pose_mid": [],
+  "fixed_travel_corners": [],
+  "fixed_travel_nominal": [],
+  "tool_head": [],
+  "wrist_pose_mid": [],
+  "wrist_swing": [],
+  "wrist_travel_corners": []
+ },
+ "line_of_sight": {
+  "fixed": {
+   "A": {
+    "blocked": 0,
+    "off_axis_deg": 30.1,
+    "total": 27
+   },
+   "B": {
+    "blocked": 0,
+    "off_axis_deg": 41.6,
+    "total": 27
+   }
+  },
+  "wrist": {
+   "A": {
+    "blocked": 0,
+    "off_axis_deg": 30.1,
+    "total": 27
+   },
+   "B": {
+    "blocked": 0,
+    "off_axis_deg": 41.6,
+    "total": 27
+   }
+  }
+ },
+ "parts": {
+  "angle_wedge_15": {
+   "kind": "printed",
+   "size_mm": [
+    18.7,
+    40.0,
+    40.0
+   ],
+   "volume_cm3": 20.48
+  },
+  "angle_wedge_30": {
+   "kind": "printed",
+   "size_mm": [
+    31.1,
+    40.0,
+    40.0
+   ],
+   "volume_cm3": 30.07
+  },
+  "angle_wedge_45": {
+   "kind": "printed",
+   "size_mm": [
+    40.0,
+    40.0,
+    48.0
+   ],
+   "volume_cm3": 43.54
+  },
+  "base_plate": {
+   "kind": "machined",
+   "size_mm": [
+    10.0,
+    460.0,
+    480.0
+   ],
+   "volume_cm3": 2207.76
+  },
+  "beam_spacer": {
+   "kind": "printed",
+   "size_mm": [
+    4.0,
+    40.0,
+    60.0
+   ],
+   "volume_cm3": 9.19
+  },
+  "bearing_support_608": {
+   "kind": "printed",
+   "size_mm": [
+    28.0,
+    30.0,
+    30.0
+   ],
+   "volume_cm3": 13.13
+  },
+  "brace_bracket": {
+   "kind": "printed",
+   "size_mm": [
+    30.0,
+    30.0,
+    32.0
+   ],
+   "volume_cm3": 6.55
+  },
+  "cable_clip_2020": {
+   "kind": "printed",
+   "size_mm": [
+    10.0,
+    20.0,
+    24.0
+   ],
+   "volume_cm3": 2.33
+  },
+  "camera_plate": {
+   "kind": "printed",
+   "size_mm": [
+    5.0,
+    40.0,
+    60.0
+   ],
+   "volume_cm3": 11.56
+  },
+  "camera_wedge_45": {
+   "kind": "printed",
+   "size_mm": [
+    40.0,
+    40.0,
+    48.0
+   ],
+   "volume_cm3": 42.88
+  },
+  "chain_mount": {
+   "kind": "printed",
+   "size_mm": [
+    28.0,
+    30.0,
+    40.0
+   ],
+   "volume_cm3": 12.12
+  },
+  "control_panel": {
+   "kind": "printed",
+   "size_mm": [
+    50.0,
+    60.0,
+    190.0
+   ],
+   "volume_cm3": 68.5
+  },
+  "electronics_enclosure": {
+   "kind": "printed",
+   "size_mm": [
+    85.0,
+    105.0,
+    210.0
+   ],
+   "volume_cm3": 230.44
+  },
+  "enclosure_lid": {
+   "kind": "printed",
+   "size_mm": [
+    3.0,
+    105.0,
+    210.0
+   ],
+   "volume_cm3": 62.19
+  },
+  "hamilton_clamp": {
+   "kind": "printed",
+   "size_mm": [
+    23.0,
+    26.0,
+    40.0
+   ],
+   "volume_cm3": 11.78
+  },
+  "limit_flag": {
+   "kind": "printed",
+   "size_mm": [
+    10.0,
+    17.0,
+    24.0
+   ],
+   "volume_cm3": 1.67
+  },
+  "limit_switch_bracket": {
+   "kind": "printed",
+   "size_mm": [
+    20.0,
+    22.0,
+    30.0
+   ],
+   "volume_cm3": 4.29
+  },
+  "microscope_clamp": {
+   "kind": "printed",
+   "size_mm": [
+    36.0,
+    46.0,
+    46.0
+   ],
+   "volume_cm3": 44.65
+  },
+  "motor_mount_nema17": {
+   "kind": "printed",
+   "size_mm": [
+    30.0,
+    46.0,
+    46.0
+   ],
+   "volume_cm3": 16.58
+  },
+  "nut_bracket": {
+   "kind": "printed",
+   "size_mm": [
+    24.0,
+    36.0,
+    36.0
+   ],
+   "volume_cm3": 10.76
+  },
+  "phantom_tray": {
+   "kind": "printed",
+   "size_mm": [
+    8.0,
+    100.0,
+    100.0
+   ],
+   "volume_cm3": 60.58
+  },
+  "plunger_coupler": {
+   "kind": "printed",
+   "size_mm": [
+    10.1,
+    16.0,
+    31.0
+   ],
+   "volume_cm3": 4.46
+  },
+  "plunger_motor_mount": {
+   "kind": "printed",
+   "size_mm": [
+    28.0,
+    30.0,
+    52.0
+   ],
+   "volume_cm3": 11.8
+  },
+  "quick_knob": {
+   "kind": "printed",
+   "size_mm": [
+    8.0,
+    19.6,
+    19.6
+   ],
+   "volume_cm3": 1.88
+  },
+  "specimen_clamp_post": {
+   "kind": "printed",
+   "size_mm": [
+    10.0,
+    14.0,
+    24.0
+   ],
+   "volume_cm3": 2.67
+  },
+  "specimen_vblock": {
+   "kind": "printed",
+   "size_mm": [
+    20.0,
+    40.0,
+    50.0
+   ],
+   "volume_cm3": 32.17
+  },
+  "stage_plate": {
+   "kind": "machined",
+   "size_mm": [
+    6.0,
+    62.0,
+    200.0
+   ],
+   "volume_cm3": 73.89
+  },
+  "tolerance_coupon": {
+   "kind": "printed",
+   "size_mm": [
+    10.0,
+    50.0,
+    76.0
+   ],
+   "volume_cm3": 12.78
+  },
+  "tool_backplate": {
+   "kind": "printed",
+   "size_mm": [
+    6.0,
+    40.0,
+    156.0
+   ],
+   "volume_cm3": 36.78
+  },
+  "tool_connector_holder": {
+   "kind": "printed",
+   "size_mm": [
+    6.0,
+    20.0,
+    40.0
+   ],
+   "volume_cm3": 3.68
+  },
+  "wrist_cradle": {
+   "kind": "printed",
+   "size_mm": [
+    34.0,
+    52.0,
+    118.0
+   ],
+   "volume_cm3": 37.42
+  },
+  "wrist_motor_mount_b": {
+   "kind": "printed",
+   "size_mm": [
+    6.0,
+    36.0,
+    42.0
+   ],
+   "volume_cm3": 8.91
+  },
+  "wrist_sector_b_front": {
+   "kind": "printed",
+   "size_mm": [
+    3.0,
+    36.9,
+    51.4
+   ],
+   "volume_cm3": 3.27
+  },
+  "wrist_sector_b_rear": {
+   "kind": "printed",
+   "size_mm": [
+    3.0,
+    36.9,
+    51.4
+   ],
+   "volume_cm3": 3.17
+  },
+  "wrist_yoke": {
+   "kind": "printed",
+   "size_mm": [
+    70.0,
+    124.0,
+    125.0
+   ],
+   "volume_cm3": 111.3
+  },
+  "z_carriage_plate": {
+   "kind": "printed",
+   "size_mm": [
+    6.0,
+    70.0,
+    70.0
+   ],
+   "volume_cm3": 28.86
+  },
+  "z_knob": {
+   "kind": "printed",
+   "size_mm": [
+    12.0,
+    50.0,
+    50.0
+   ],
+   "volume_cm3": 19.52
+  },
+  "z_nut_holder": {
+   "kind": "printed",
+   "size_mm": [
+    22.0,
+    24.0,
+    30.0
+   ],
+   "volume_cm3": 12.98
+  },
+  "z_riser": {
+   "kind": "machined",
+   "size_mm": [
+    46.0,
+    62.0,
+    188.0
+   ],
+   "volume_cm3": 84.38
+  }
+ },
+ "tip_range_z_mm": [
+  21.0,
+  121.0
+ ],
+ "travel_mm": 100.0,
+ "work_y_mm": {
+  "fixed": 208.0,
+  "wrist": 304.0
+ },
+ "wrist_setback_mm": 110.0
+}

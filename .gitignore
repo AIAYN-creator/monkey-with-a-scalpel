@@ -13,6 +13,7 @@
 !.github/
 !.github/workflows/
 !.github/workflows/ci.yml
+!.github/dependabot.yml
 !simulation/
 !simulation/test_instalacion.py
 !simulation/sim_brazo.py
@@ -34,10 +35,15 @@
 !firmware/tests/test_controller.cpp
 !firmware/tests/test_board.cpp
 !firmware/tests/mutation_check.py
+!firmware/tests/test_fuzz.cpp
+!firmware/tests/coverage_check.py
 !cad/
 !cad/README.md
 !cad/params.py
 !cad/wiring.py
+!cad/check_report.py
+!cad/test_modules.py
+!cad/expected_report.json
 !cad/layout.py
 !cad/modules/
 !cad/modules/*.py

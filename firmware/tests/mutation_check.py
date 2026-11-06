@@ -16,11 +16,13 @@ CORE = ROOT / "firmware" / "core"
 BOARD = ROOT / "firmware" / "board" / "controller_board"
 TESTS = ROOT / "firmware" / "tests"
 
-# target -> (file that is mutated, test sources to compile with it, directories on the include path)
+# target -> (file that is mutated, test suites, directories on the include path). A suite is the list of sources compiled into one
+# test program; a mutant is killed when ANY suite of its target fails.
 TARGETS = {
-    "controller": (CORE / "controller.cpp", [CORE / "controller.cpp", TESTS / "test_controller.cpp"], [CORE]),
-    "step_queue": (CORE / "step_queue.h", [TESTS / "test_board.cpp"], [CORE, BOARD]),
-    "board_config": (BOARD / "board_config.h", [TESTS / "test_board.cpp"], [CORE, BOARD]),
+    "controller": (CORE / "controller.cpp", [[CORE / "controller.cpp", TESTS / "test_controller.cpp"],
+                                             [CORE / "controller.cpp", TESTS / "test_fuzz.cpp"]], [CORE]),
+    "step_queue": (CORE / "step_queue.h", [[TESTS / "test_board.cpp"]], [CORE, BOARD]),
+    "board_config": (BOARD / "board_config.h", [[TESTS / "test_board.cpp"]], [CORE, BOARD]),
 }
 
 # (target, name, text that must occur exactly once in the target file, replacement)
@@ -39,6 +41,11 @@ MUTANTS = [
     ("step_queue", "step queue counts steps the wrong way", "pending_[axis] += forward_[axis] ? -1 : 1;", "pending_[axis] += forward_[axis] ? 1 : -1;"),
     ("step_queue", "step queue has no low phase", "if (high_[axis]) {", "if (false) {"),
     ("step_queue", "step queue clear does nothing", "void clear() { pending_.fill(0); }", "void clear() {}"),
+    ("controller", "CLEAR keeps the homing after a fault", "homed_ = homed_ && !must_rehome;", "homed_ = homed_;"),
+    ("controller", "MOVE accepted while another move runs", 'if (state_ == State::Moving) return "error:busy";', ""),
+    ("controller", "STOP does not stop", "    request_stop();", "    (void)0;"),
+    ("controller", "MOVE accepted before homing", """if (command == "MOVE") {
+    if (!homed_) return "error:not_homed";""", """if (command == "MOVE") {"""),
     ("step_queue", "step queue overflow not reported", "overflow_ = true;", ""),
     ("step_queue", "step queue backlog not clamped", "total = total > 0 ? kMaxPending : -kMaxPending;", ""),
     ("step_queue", "step queue direction inverted", "forward_[axis] = pending_[axis] > 0;", "forward_[axis] = pending_[axis] < 0;"),
@@ -49,14 +56,14 @@ MUTANTS = [
 ]
 
 
-def run(target, source_text, workdir, name):
-    """Compiles the tests against a (possibly mutated) copy of the target file and runs them."""
-    path, tests, includes = TARGETS[target]
-    folder = workdir / name
+def run_suite(target, source_text, workdir, name, index):
+    """Compiles one suite against a (possibly mutated) copy of the target file and runs it."""
+    path, suites, includes = TARGETS[target]
+    folder = workdir / f"{name}_{index}"
     folder.mkdir()
     mutated = folder / path.name
     mutated.write_text(source_text, encoding="utf-8")
-    sources = [str(mutated if t == path else t) for t in tests]
+    sources = [str(mutated if t == path else t) for t in suites[index]]
     flags = [f"-I{folder}"] + [f"-I{d}" for d in includes]
     exe = folder / "tests.exe"
     build = subprocess.run(["g++", "-std=c++17", "-O1", *flags, *sources, "-o", str(exe)],
@@ -66,6 +73,17 @@ def run(target, source_text, workdir, name):
         return ("fails" if "static assertion" in build.stderr else "does not compile"), build.stderr.strip().splitlines()[:3]
     result = subprocess.run([str(exe)], check=False, capture_output=True, text=True)
     return ("passes" if result.returncode == 0 else "fails"), result.stdout.strip().splitlines()[-1:]
+
+
+def run(target, source_text, workdir, name):
+    """Runs every suite of the target; the result is `fails` as soon as one fails, naming the suite that caught it."""
+    suites = TARGETS[target][1]
+    detail = []
+    for index in range(len(suites)):
+        status, detail = run_suite(target, source_text, workdir, name, index)
+        if status != "passes":
+            return status, [f"suite {index}"] + list(detail)
+    return "passes", detail
 
 
 def main():
@@ -87,7 +105,7 @@ def main():
                 continue
             status, detail = run(target, original.replace(old, new), workdir, f"m{index}")
             killed = status == "fails"
-            print(f"{'killed  ' if killed else 'SURVIVED'}  {name} ({status})")
+            print(f"{'killed  ' if killed else 'SURVIVED'}  {name} ({status}{', ' + detail[0] if killed and detail else ''})")
             if not killed:
                 survivors.append(name)
     print(f"\n{len(MUTANTS) - len(survivors)} of {len(MUTANTS)} mutants killed")
