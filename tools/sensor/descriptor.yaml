@@ -1,0 +1,19 @@
+# Tool descriptor (see tools/README.md). Every number is provisional until measured (cards meas-tools and rev-tools). Limits are what the simulation model enforces.
+id: 8
+name: sensor
+class: sensor
+mass_g: 120
+tip_mm: [0, 0, -15]
+retract_mm: 15
+axes: []
+power:
+  max_current_a: 0.4
+  hw_cutoff: false
+  cut_on_abort: false
+safe_state: switch off the light source and withdraw along the axis
+capabilities: [read_fluorescence, read_photometry, dark_reference]
+limits:
+  max_integration_ms: 5000
+  dark_counts: 20
+  noise_counts: 3
+  saturation_counts: 60000

@@ -1,4 +1,15 @@
-# Monkey with a Scalpel
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/wordmark-dark.png">
+    <img src="assets/brand/wordmark-light.png" alt="Vernier" width="520">
+  </picture>
+</p>
+
+<p align="center"><b>Read finer than the ruler.</b><br>An open robotic lab assistant with an LLM copilot and a human who approves every step.</p>
+
+# Vernier
+
+*Working name; the project started as "Monkey with a Scalpel".* A vernier scale reads between the marks of the ruler: that is what this project does with cameras and a closed loop, reading finer than the mechanics resolve. See [`assets/brand/`](assets/brand/README.md).
 
 > Because giving an LLM a robotic arm is like giving a monkey a scalpel. This is the sandbox where we teach it not to cut itself.
 
@@ -12,9 +23,9 @@ Early stage, still in simulation and design: **nothing here has run on hardware,
 
 - **Simulation (Phase 0):** the simulated gantry, the self-correction loop and an error model, checked by the CI.
 - **Controller firmware:** a hardware-independent C++ core with limits, a communication watchdog and an abort that withdraws the tool, plus a provisional board layer for an ESP32-S3 with one TMC2209 driver per axis. Both compile (the board layer for `esp32s3`) and are tested on a PC. A mutation check injects 21 faults, one at a time, into the core, the step queue and the pin map, and the tests must catch every one; it runs in the CI.
-- **CAD:** a provisional parametric model of the whole system (39 parts: frame with diagonal braces and a box crossbeam, three axes, an optional active wrist with a worm drive, tool head, two cameras and a microscope, controls, electronics enclosure, cable clips, a specimen fixture and a heater-plate parameter). It is a registry of modules, so parts can be developed in parallel. It has geometric checks (interferences at the corners of the travel and in the wrist swing, camera line of sight) and a first-order mechanical calculation, but no finite-element analysis and no real measurements. **Do not print yet.**
+- **CAD:** a provisional parametric model of the whole system (61 parts: frame with diagonal braces and a box crossbeam, three axes, an optional active two-axis wrist (B with a worm drive, A as a stage), tool head, two cameras and a microscope, controls, electronics enclosure, cable clips, a specimen fixture and a heater-plate parameter). It is a registry of modules, so parts can be developed in parallel. It has geometric checks (interferences at the corners of the travel and in the wrist swing, camera line of sight) and a first-order mechanical calculation, but no finite-element analysis and no real measurements. **Do not print yet.**
 - **Wiring map:** cables, conductor counts, estimated lengths and the moving harness, checked against the firmware pins.
-- **Host software:** `host/coords/` has the sample coordinate frames and the camera calibration with two-camera triangulation, tested in the CI. The control layer, the camera-overlay viewer and the LLM interface are next.
+- **Host software** (all tested in the CI, none run on hardware): `host/coords/` (sample frames, camera calibration, triangulation), `host/link/` (serial protocol, session, heartbeat, hash-chained log), `host/toolsim/` (behaviour models of the eight tools and the wash station, with the limits read from their descriptors), `host/overlay/` (camera overlay on simulated frames: tip, target, error, firmware state, anatomical coordinates, each with how it was computed) and `host/llm/` (the interface for a language model: a closed list of capabilities, a deterministic validator with no AI, approval bound to the hash of the plan, narration and a log; the model is replaceable by a script).
 - **Plan:** a card board with a batch of 36 cards (decisions, software, one module per tool, integration and tests), arranged so independent work can run in parallel without clashing. It is kept outside this repository.
 
 The plan is split into phases, each closed by a joint review with the collaborators before the next one starts. **Phase 1 now covers the whole tool family, not only the syringe: everything must work before Phase 1 closes, and Phase 2 does not start without that.** If a tool is not built for budget or feasibility, it is simulated and its code, model and tests are prepared anyway, and the project records which tool and why.
@@ -38,7 +49,7 @@ An error model ([`simulation/error_model.py`](simulation/error_model.py)) and a 
 
 ## What we are building
 
-- **XYZ gantry** that moves the tool, with 100 mm of useful travel per axis; the sample or phantom stays fixed. Printed parts wherever stiffness allows.
+- **XYZ gantry** that moves the tool, with 100 mm of useful travel per axis today (an automatic tool change needs more, about 200 mm on one axis: a study is planned); the sample or phantom stays fixed. Printed parts wherever stiffness allows.
 - **Active wrist** (two axes: B, the rotation about X, is designed with a worm drive that holds its angle with the power off; A, about Y, is next) to control the entry angle, controlled open loop and watched by the cameras. It is the default design; the earlier fixed-wedge option stays as a fallback. With the wrist the tip has a minimum height, because the yoke arms straddle the needle.
 - **Interchangeable tools on one quick-change interface**: an injector (precision syringe with its own linear actuator), a contact probe, a scalpel with a depth stop, a micro-drill, aspiration/irrigation/dispensing, a gripper, a cautery and optical sensors (fluorescence, photometry), with a wash station and a tool rack. Only the injector exists as a design so far. The tool contract (not written yet) will have each tool declare its capabilities, its geometry and its safe state, the firmware refuse a tool it does not know, and the tool power be switched by the same contactor as the emergency stop.
 - **Cameras**: two cameras (one oblique, one lateral) calibrated to millimetres, plus a USB microscope as an extra view.

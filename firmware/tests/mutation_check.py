@@ -20,7 +20,8 @@ TESTS = ROOT / "firmware" / "tests"
 # test program; a mutant is killed when ANY suite of its target fails.
 TARGETS = {
     "controller": (CORE / "controller.cpp", [[CORE / "controller.cpp", TESTS / "test_controller.cpp"],
-                                             [CORE / "controller.cpp", TESTS / "test_fuzz.cpp"]], [CORE]),
+                                             [CORE / "controller.cpp", TESTS / "test_fuzz.cpp"],
+                                             [CORE / "controller.cpp", TESTS / "test_tools.cpp"]], [CORE]),
     "step_queue": (CORE / "step_queue.h", [[TESTS / "test_board.cpp"]], [CORE, BOARD]),
     "board_config": (BOARD / "board_config.h", [[TESTS / "test_board.cpp"]], [CORE, BOARD]),
 }
@@ -45,7 +46,16 @@ MUTANTS = [
     ("controller", "MOVE accepted while another move runs", 'if (state_ == State::Moving) return "error:busy";', ""),
     ("controller", "STOP does not stop", "    request_stop();", "    (void)0;"),
     ("controller", "MOVE accepted before homing", """if (command == "MOVE") {
-    if (!homed_) return "error:not_homed";""", """if (command == "MOVE") {"""),
+    if (config_.require_tool && !tool_ready_) return "error:tool";
+    if (!homed_) return "error:not_homed";""", """if (command == "MOVE") {
+    if (config_.require_tool && !tool_ready_) return "error:tool";"""),
+    # not listed: clearing tool_enabled_ on a tool change. It is defence in depth: a change while powered is already a fault, and
+    # a fault clears the request, so removing the line changes no behaviour (an equivalent mutant).
+    ("controller", "tool powered without TOOL ON", "tool_power_ = tool_enabled_ && tool_ready_ && power_ok_;", "tool_power_ = tool_ready_ && power_ok_;"),
+    ("controller", "a drill keeps its power on abort", "tool_ready_ && tool_->cut_on_abort &&", "tool_ready_ && false &&"),
+    ("controller", "tool change while powered is not a fault", "if ((was_powered || busy) && state_ != State::Fault && state_ != State::PowerLoss) enter_fault(Cause::Tool);", ""),
+    ("controller", "an unknown tool can be switched on", 'if (!tool_ready_) return "error:tool";', ""),
+    ("controller", "the withdrawal ignores the tool", "double s = tool_ready_ && tool_->retract_mm > 0.0 ? tool_->retract_mm : config_.retract_mm;", "double s = config_.retract_mm;"),
     ("step_queue", "step queue overflow not reported", "overflow_ = true;", ""),
     ("step_queue", "step queue backlog not clamped", "total = total > 0 ? kMaxPending : -kMaxPending;", ""),
     ("step_queue", "step queue direction inverted", "forward_[axis] = pending_[axis] > 0;", "forward_[axis] = pending_[axis] < 0;"),

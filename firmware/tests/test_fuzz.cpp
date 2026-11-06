@@ -30,6 +30,14 @@ int g_error_replies = 0;
     }                                                                                           \
   } while (0)
 
+// Tools of the randomised tests: a powered tool that is cut on abort (a drill) and two that keep their power.
+const ToolInfo kFuzzTools[] = {
+    {11, "inj", ToolClass::Injector, {0, 0, -30}, 12.0, 1 << 5, 1.0, false, false},
+    {12, "drl", ToolClass::Drill, {0, 0, -25}, 8.0, 0, 2.0, true, true},
+    {13, "grp", ToolClass::Gripper, {0, 0, -40}, 15.0, 0, 0.5, false, false},
+};
+const uint16_t kToolIds[] = {0, 11, 12, 13, 99};
+
 struct Rng {
   uint64_t s;
   explicit Rng(uint64_t seed) : s(seed * 0x9E3779B97F4A7C15ull + 1) {}
@@ -54,6 +62,8 @@ struct Plant {
   uint32_t ms = 0;
   Outputs last;
   bool crashed = false;  // the controller drove an axis into its mechanical hard stop
+  bool tool_present = false;
+  uint16_t tool_id = 0;
 
   explicit Plant(const Config& c, Rng& rng) : cfg(c), ctl(c) {
     for (int i = 0; i < kAxes; ++i) phys[i] = rng.uniform(c.axis[i].min_pos, c.axis[i].max_pos);
@@ -71,6 +81,8 @@ struct Plant {
     }
     in.abort_button = button;
     in.motor_power_ok = power;
+    in.tool_present = tool_present;
+    in.tool_id = tool_id;
     return in;
   }
   Outputs tick() {
@@ -87,10 +99,12 @@ struct Plant {
 
 std::string random_command(Rng& rng, const Config& cfg) {
   static const char* const fixed[] = {"PING", "STATUS", "HOME", "PARK", "STOP", "ABORT", "CLEAR", "ping", "Status"};
+  static const char* const tool_commands[] = {"TOOL", "TOOL ON", "TOOL OFF", "TOOL ON", "tool on", "TOOL X"};
   static const char* const garbage[] = {"", " ", "MOVE", "MOVE X", "MOVE Xabc", "MOVE X1e999", "MOVE X-nan", "MOVE F0 X1", "MOVE F-5 X1",
                                         "HOME HOME", "FOO", "\t\t", "MOVE X1 X2 X3 Y4", "MOVE Q5", "STATUS STATUS", "ABORT now",
                                         "MOVE X1 F", "move y2 z3 f10", "\xff\xfe", "MOVE X--1"};
   const int kind = rng.below(10);
+  if (rng.chance(5)) return tool_commands[rng.below(6)];
   if (kind < 3) return fixed[rng.below(9)];
   if (kind < 4) return garbage[rng.below(20)];
   std::string line = "MOVE";
@@ -126,9 +140,18 @@ void run_sequence(int seed) {
   Rng rng(static_cast<uint64_t>(seed));
   Config cfg = default_config();
   cfg.watchdog_ms = rng.chance(30) ? 300 + rng.below(3000) : 3600000;
+  cfg.tools = kFuzzTools;
+  cfg.tool_count = 3;
+  cfg.require_tool = rng.chance(50);
   Plant p(cfg, rng);
+  if (rng.chance(70)) {
+    p.tool_present = true;
+    p.tool_id = kToolIds[1 + rng.below(4)];
+  }
   const bool ping = rng.chance(50);
   uint32_t last_line_ms = 0;
+
+  for (int i = 0; i < 3; ++i) p.tick();  // the controller reads the tool interface at boot, before any command
 
   // always start by homing, so that most sequences actually move
   const int commands = 8 + rng.below(30);
@@ -142,6 +165,10 @@ void run_sequence(int seed) {
     for (int t = 0; t < ticks; ++t) {
       if (rng.chance(1) && t % 997 == 0) p.button = !p.button;  // rare ABORT button events
       if (rng.below(200000) == 0) p.power = !p.power;           // very rare motor power events
+      if (rng.below(300000) == 0) {                              // the tool is removed, swapped or replaced by an unknown one
+        p.tool_id = kToolIds[rng.below(5)];
+        p.tool_present = p.tool_id != 0 || rng.chance(30);
+      }
       if (rng.below(2500) == 0) p.slip(rng.below(kAxes), rng.uniform(-5.0, 5.0));  // lost steps: the axis slips under the controller
       if (ping && p.ms % 200 == 0) {
         p.ctl.handle_line("PING", p.ms);
@@ -174,6 +201,14 @@ void run_sequence(int seed) {
         for (int i = 0; i < kAxes; ++i) CHECK(in_range(p, i, 0.01), seed, "the position stays inside the soft limits");
       }
       CHECK(!p.crashed, seed, "the controller never drives an axis into its hard stop");
+      if (out.tool_power_enable) {
+        CHECK(p.ctl.tool() != nullptr, seed, "the tool power is never on without a known tool");
+        CHECK(p.power && state != State::Fault && state != State::PowerLoss, seed, "the tool power is off while faulted or without motor power");
+        if (p.ctl.tool() != nullptr && p.ctl.tool()->cut_on_abort) {
+          CHECK(state != State::Aborting && state != State::Aborted, seed, "a drill never has power during an abort");
+        }
+      }
+      if (cfg.require_tool && p.ctl.tool() == nullptr) CHECK(state != State::Moving, seed, "nothing moves without a known tool");
     }
   }
 

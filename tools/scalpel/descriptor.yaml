@@ -1,0 +1,19 @@
+# Tool descriptor (see tools/README.md). Every number is provisional until measured (cards meas-tools and rev-tools). Limits are what the simulation model enforces.
+id: 3
+name: scalpel
+class: cutter
+mass_g: 130
+tip_mm: [0, 0, -25]
+retract_mm: 25
+axes: []
+power:
+  max_current_a: 0.3
+  hw_cutoff: false
+  cut_on_abort: false
+safe_state: withdraw the blade along its axis and close the guard (a spring closes it with the power off)
+capabilities: [incise, cut_line, set_depth_stop, change_blade]
+limits:
+  max_depth_mm: 5.0
+  default_depth_stop_mm: 2.0
+  max_feed_mm_s: 5.0
+  max_cut_length_mm: 40
