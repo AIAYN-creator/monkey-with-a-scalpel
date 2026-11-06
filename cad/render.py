@@ -82,7 +82,7 @@ def parts_sheet(stl_dir, out_png, cols=5, tile_w=520, tile_h=440):
     sheet = Image.new("RGB", (cols * tile_w, head + rows * tile_h), "white")
     d = ImageDraw.Draw(sheet)
     big = 44 if cols >= 5 else 38
-    d.text((sheet.width / 2, 24), "Monkey with a Scalpel: planos provisionales v0.2, piezas", font=font("segoeuib.ttf", big), fill=INK, anchor="ma")
+    d.text((sheet.width / 2, 24), "Vernier: planos provisionales v0.2, piezas", font=font("segoeuib.ttf", big), fill=INK, anchor="ma")
     d.text((sheet.width / 2, 82), "Medidas supuestas o típicas de catálogo; ninguna es una medición. No imprimir todavía.", font=font("segoeui.ttf", 26),
            fill=RED, anchor="ma")
     for k, row in enumerate(info):
@@ -172,7 +172,7 @@ def system_sheet(stl_dir, out_png):
     ]
     sheet = Image.new("RGB", (3 * w + 40, 2 * (h + 40) + 330), "white")
     d = ImageDraw.Draw(sheet)
-    d.text((sheet.width / 2, 24), "Monkey with a Scalpel: sistema completo, planos provisionales v0.2", font=font("segoeuib.ttf", 46), fill=INK, anchor="ma")
+    d.text((sheet.width / 2, 24), "Vernier: sistema completo, planos provisionales v0.2", font=font("segoeuib.ttf", 46), fill=INK, anchor="ma")
     d.text((sheet.width / 2, 86), "Medidas supuestas o típicas de catálogo; ninguna es una medición. Motores, tornillos, perfiles y cámaras son maquetas. No imprimir todavía.",
            font=font("segoeui.ttf", 26), fill=RED, anchor="ma")
     for k, (label, tag, az, el) in enumerate(views):
