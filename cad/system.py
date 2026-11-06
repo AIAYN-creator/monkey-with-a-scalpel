@@ -176,31 +176,36 @@ def line_of_sight(variant, setback=110.0):
     return result
 
 
-def sweep_wrist(setback, angles=(-P.WRIST_MAX, 0.0, P.WRIST_MAX), zcs=None):
-    """Interferences of the swinging tool with everything else, over the wrist angles and three heights of Z."""
+def sweep_wrist(setback, angles=(-P.WRIST_MAX, 0.0, P.WRIST_MAX), zcs=None, positions=((0.0, 0.0),)):
+    """Interferences of the swinging tool with everything else, over the wrist angles, three heights of Z and the given (x, y)."""
     zcs = zcs or (CARRIAGE_Z_MIN, CARRIAGE_Z_MIN + HALF, CARRIAGE_Z_MAX)
     fixed = build_fixed("wrist", setback)
     found = {}
-    for zc in zcs:
-        for th in angles:
-            moving = build_moving("wrist", 0.0, 0.0, zc, th, setback)
-            swing = {k for k, v in moving.items() if v[2] == "tool"}
-            items = {k: v[0] for k, v in moving.items()}
-            items.update({k: v[0] for k, v in fixed.items()})
-            others = set(items) - swing
-            for k, v in interferences(items, only_cross=(swing, others)).items():
-                found[f"zc={zc:.0f} A={th:+.0f}: {k}"] = v
+    for xc, yc in positions:
+        for zc in zcs:
+            for th in angles:
+                moving = build_moving("wrist", xc, yc, zc, th, setback)
+                swing = {k for k, v in moving.items() if v[2] == "tool"}
+                items = {k: v[0] for k, v in moving.items()}
+                items.update({k: v[0] for k, v in fixed.items()})
+                others = set(items) - swing
+                for k, v in interferences(items, only_cross=(swing, others)).items():
+                    found[f"x={xc:+.0f} y={yc:+.0f} zc={zc:.0f} A={th:+.0f}: {k}"] = v
     return found
 
 
-def sweep_travel(variant="fixed", setback=110.0, margin=4.0):
-    """Interferences of the moving parts with the fixed ones at the corners of the travel, plus `margin` (hard stops)."""
+def sweep_travel(variant="fixed", setback=110.0, margin=4.0, zc_low=None):
+    """Interferences of the moving parts with the fixed ones at the corners of the travel, plus `margin` (hard stops).
+
+    `zc_low` is the lowest carriage height tried (default: the lowest one minus `margin`). With the active wrist the lowest
+    height is WRIST_MIN_ZC, because the yoke arms touch the phantom below it.
+    """
     fixed = build_fixed(variant, setback)
     found = {}
     half = HALF + margin
     for xc in (-half, half):
         for yc in (-half, half):
-            for zc in (CARRIAGE_Z_MIN - margin, CARRIAGE_Z_MAX + margin):
+            for zc in (CARRIAGE_Z_MIN - margin if zc_low is None else zc_low, CARRIAGE_Z_MAX + margin):
                 moving = build_moving(variant, xc, yc, zc, 0.0, setback)
                 items = {k: v[0] for k, v in moving.items()}
                 items.update({k: v[0] for k, v in fixed.items()})
@@ -209,13 +214,22 @@ def sweep_travel(variant="fixed", setback=110.0, margin=4.0):
     return found
 
 
+# With the active wrist the arms of the yoke straddle the needle (27 to 35 mm each side) at the height of the hub plane, 30 mm above
+# the tip, so below this tip height they touch the phantom block (found by sweeping the corners of the travel with the wrist, which
+# the build did not do before). The firmware has to keep the tip above it and the bottom stop of Z has to sit there.
+WRIST_MIN_TIP = P.TIP_MIN + 2.0
+WRIST_MIN_ZC = WRIST_MIN_TIP + 30.0 + HUB_TO_CARRIAGE
+
 # tilting the wrist to +30 degrees with the needle deeper than this hits the phantom with the cradle (found by the sweep)
 WRIST_TILT_MIN_TIP = 20.0 + P.HEATER_T  # 8 mm below the phantom surface (28 mm without a heater plate)
 
 
 def sweep_wrist_all(setback):
-    """The wrist swing over the whole range, with the rule that A = +30 needs the tip at or above WRIST_TILT_MIN_TIP."""
+    """The wrist swing over the whole range and the corners of the XY travel, with the rule that A = +30 needs the tip at or above
+    WRIST_TILT_MIN_TIP and the tool never goes below WRIST_MIN_ZC."""
+    positions = ((0.0, 0.0), (-HALF, -HALF), (HALF, -HALF), (-HALF, HALF), (HALF, HALF))
     zc_rule = WRIST_TILT_MIN_TIP + 30.0 + HUB_TO_CARRIAGE
-    found = sweep_wrist(setback, angles=(-P.WRIST_MAX, 0.0, P.WRIST_MAX), zcs=(zc_rule, CARRIAGE_Z_MIN + HALF, CARRIAGE_Z_MAX))
-    found.update(sweep_wrist(setback, angles=(-P.WRIST_MAX, 0.0), zcs=(CARRIAGE_Z_MIN,)))
+    found = sweep_wrist(setback, angles=(-P.WRIST_MAX, 0.0, P.WRIST_MAX), zcs=(zc_rule, CARRIAGE_Z_MIN + HALF, CARRIAGE_Z_MAX),
+                        positions=positions)
+    found.update(sweep_wrist(setback, angles=(-P.WRIST_MAX, 0.0), zcs=(WRIST_MIN_ZC,), positions=positions))
     return found

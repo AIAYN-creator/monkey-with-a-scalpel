@@ -101,3 +101,11 @@ SWITCH_HOLE_PITCH = p("SWITCH_HOLE_PITCH", 9.5, "typical", "micro limit switch m
 ESTOP_D = p("ESTOP_D", 22.3, "typical", "22 mm mushroom emergency stop, panel hole")
 ABORT_D = p("ABORT_D", 16.2, "typical", "16 mm push button, panel hole")
 LED_D = p("LED_D", 8.2, "typical", "8 mm indicator, panel hole")
+
+# --- microscope and specimen fixture (cards t-micro and fix-mouse; all assumed) ----------------------------------
+MICRO_D = p("MICRO_D", 32.0, "assumed", "USB microscope body diameter")
+MICRO_L = p("MICRO_L", 110.0, "assumed", "USB microscope body length")
+MICRO_WD = p("MICRO_WD", 100.0, "assumed", "working distance from the lens to the target; a long-working-distance objective is needed so the lens clears the tool at the end of the travel")
+MICRO_FOV = p("MICRO_FOV", 12.0, "assumed", "width of the microscope field of view at the working distance")
+MICRO_Z = p("MICRO_Z", 55.0, "assumed", "height of the microscope axis above the base plate")
+FIX_W = p("FIX_W", 26.0, "assumed", "width of the test piece the fixture holds (a head-sized specimen)")

@@ -100,12 +100,14 @@ def main(out_dir):
     items = {k: v[0] for k, v in {**fixed, **moving}.items()}
     system["fixed_pose_mid"] = SYS.interferences(items)
     system["fixed_travel_corners"] = SYS.sweep_travel("fixed")
+    system["fixed_travel_nominal"] = SYS.sweep_travel("fixed", margin=0.0)
     export_assembly(out, "sysfixed", fixed, moving)
     # system with the active wrist, level and tilted
     fixed_w = SYS.build_fixed("wrist", WRIST_SETBACK)
     moving_w = SYS.build_moving("wrist", setback=WRIST_SETBACK)
     system["wrist_pose_mid"] = SYS.interferences({k: v[0] for k, v in {**fixed_w, **moving_w}.items()})
     system["wrist_swing"] = SYS.sweep_wrist_all(WRIST_SETBACK)
+    system["wrist_travel_corners"] = SYS.sweep_travel("wrist", WRIST_SETBACK, zc_low=SYS.WRIST_MIN_ZC)
     export_assembly(out, "syswrist", fixed_w, moving_w)
     tilted = SYS.build_moving("wrist", zc=SYS.CARRIAGE_Z_MIN + 2 * P.TRAVEL / 3, theta=TILT_RENDER, setback=WRIST_SETBACK)
     export_assembly(out, "syswristtilt", fixed_w, tilted)

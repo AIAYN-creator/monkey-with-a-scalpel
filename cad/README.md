@@ -38,8 +38,26 @@ Rules, so that modules can be developed in parallel without stepping on each oth
 
 - Adding or changing a module touches **only its own file**, never `system.py` or `build.py`.
 - A name used by two modules, or by a module and a legacy catalogue, is an error (`ValueError`).
-- Current modules: `frame`, `x_axis`, `z_stage`, `wrist`, `cameras`, `electronics`, `controls`, `work_area`, `cable_chain`, `tool_mount`.
+- Current modules: `frame`, `bracing`, `x_axis`, `z_stage`, `z_brake`, `wrist`, `wrist_drive`, `cameras`, `microscope`, `electronics`, `controls`, `work_area`, `specimen_fixture`, `cable_chain`, `tool_mount`.
 - The refactor to modules does not change the result: the 30 parts, both assemblies and every check give the same numbers as before.
+
+## Findings of the module cards (06/11/2026)
+
+- **The build did not check the active wrist at the travel limits.** `build.py` now also sweeps the wrist variant at the corners of
+  the travel and swings the wrist at the four corners and the centre, not only at x = y = 0. That found two real problems:
+  the yoke arms (27 to 35 mm each side of the needle) touch the phantom block when the tip is below 23 mm, so the wrist variant
+  has a **minimum tip height** (`WRIST_MIN_TIP`, 2 mm above the lowest one; the firmware has to keep to it and the bottom stop of Z
+  has to sit there), and a tilt of -30 degrees near the front of the travel hit **camera A**. Camera A moved from 95 to 175 mm in
+  front of the needle and from 135 to 170 mm high; its largest angle to the optical axis fell from 51 to 30 degrees.
+- **Stiffening:** a second 2020 profile under the crossbeam, joined by printed plates, and two diagonal braces. With assumed joint
+  stiffness the torsion of the crossbeam falls from about 270 to about 80 um at the tip and the sway mode rises from an unreliable
+  upper bound to about 94 Hz (`mech_review.py`). The printed brackets that hold the braces are the weak point.
+- **Wrist drive:** a worm and a printed sector on the tilt axis, with a NEMA 11, as envelopes. The second wrist axis is a concept
+  only; the axis called A in the CAD is the rotation about X, while the firmware's A is about Y. They must be reconciled.
+- **Microscope:** fixed, on the left, with a 100 mm working distance. Only the neighbourhood of the target is in its field, and the
+  wrist yoke blocks the view when the tool is at the far left.
+- **Specimen fixture:** generic V block and clamp posts, not placed by default. With the wrist the needle has to stay within a few
+  millimetres of the centre line at low heights, because the yoke arms straddle the specimen.
 
 ## Parts
 

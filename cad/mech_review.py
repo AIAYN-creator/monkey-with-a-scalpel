@@ -140,6 +140,35 @@ def report():
     force = (m_tool + m_zcar) * G
     torque_motor = force * lead / (2 * math.pi * 0.3) / 1000
     row("Torque to lift the tool (efficiency 0.3)", round(torque_motor, 3), "N m", "a NEMA 17 gives about 0.4 N m")
+
+    # --- stiffening (card mech-z): box crossbeam and braced uprights; every value below rests on the marked assumptions ---
+    t_wall = assume("effective wall of the box section (two profiles joined by plates)", 2.0, "mm", "assumed; the real joint stiffness decides")
+    b_box, h_box = P.PROFILE - t_wall, 2 * P.PROFILE - t_wall
+    j_box = 4 * (b_box * h_box) ** 2 * t_wall / (2 * (b_box + h_box))  # Bredt-Batho, thin-walled closed section
+    twist_box = torque * 1000 * (span / 4) / (26e3 * j_box)
+    row("Crossbeam as a box (two profiles joined): torsion constant", round(j_box), "mm4",
+        f"{j_box / j:.1f} times the single profile; assumed wall")
+    row("Crossbeam twist at mid span, box", round(math.degrees(twist_box), 3), "deg",
+        f"tip shift about {twist_box * 317 * 1000:.0f} um (single profile: {twist * 317 * 1000:.0f} um)")
+    area_brace = assume("2020 profile cross-section area", 360.0, "mm2", "typical, verify the datasheet")
+    k_joint = assume("stiffness of a printed brace bracket along the brace", 3000.0, "N/mm", "assumed; measure it")
+    brace_dy, brace_dz = 120.0, 170.0  # from cad/modules/bracing.py
+    brace_len = math.hypot(brace_dy, brace_dz)
+    k_axial = E_AL * area_brace / brace_len
+    k_brace = 1 / (1 / k_axial + 2 / k_joint)  # a brace in series with its two brackets
+    k_sway = 2 * k_brace * (brace_dy / brace_len) ** 2 * 1000  # N/m, two braces working in the direction of the load
+    f_sway = math.sqrt(k_sway / (m_on_xcar + 1.0)) / (2 * math.pi)
+    row("Frame sway mode with the diagonal braces and printed brackets", round(f_sway), "Hz",
+        "dominated by the brackets; only as good as the assumed bracket stiffness")
+
+    # --- Z axis back-drive with the power off (card mech-z) ---
+    r_m = d_pitch / 2
+    detent = assume("unpowered NEMA 17 detent torque", 10.0, "N mm", "typical 1 to 2.5 N cm, confirm in the datasheet")
+    for mu in (0.03, 0.05, 0.15):
+        phi = math.atan(mu / math.cos(math.radians(14.5)))
+        load_torque = max(0.0, force * r_m * math.tan(lam - phi))  # torque the load puts on the motor, N mm
+        row(f"Torque the Z load puts on the motor at friction {mu}", round(load_torque, 2), "N mm",
+            f"detent torque {detent:g} N mm: margin {detent / load_torque:.0f}x" if load_torque > 0 else "self-locking: no torque")
     return rows
 
 
