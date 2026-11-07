@@ -85,6 +85,8 @@ TRAVEL_Y = p("TRAVEL_Y", _XYZ[1], "decided", "useful travel of Y, total")
 TRAVEL_Z = p("TRAVEL_Z", _XYZ[2], "decided", "useful travel of Z, total")
 TRAVEL = TRAVEL_Z  # the vertical travel, as the name was used before there was one per axis
 DX, DY, DZ = TRAVEL_X - 100.0, TRAVEL_Y - 100.0, TRAVEL_Z - 100.0  # growth over the first prototype
+BEAM_W = p("BEAM_W", 60.0 if DX <= 100.0 else 80.0, "decided", "width (Y) of the printed hollow crossbeam; torsion decides it")
+BEAM_H = p("BEAM_H", BEAM_W + 20.0, "decided", "height (Z) of the printed hollow crossbeam; its top face is the X rail seat")
 CLAMP_Z = p("CLAMP_Z", 12.0, "decided", "height of the clamp centre above the needle hub plane")
 
 

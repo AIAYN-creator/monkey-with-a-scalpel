@@ -80,5 +80,5 @@ def fixed(variant, setback):
         out[f"cable_clip_upright_{i}"] = (Pos(-P.UPRIGHT_X, -P.PROFILE / 2, z) * Rot(90, 0, 0) * cable_clip_2020(), "printed")
     for i, x in enumerate((-100.0, -50.0)):  # and along the rear face of the crossbeam
         out[f"cable_clip_beam_{i}"] = (
-            Pos(x, -P.PROFILE / 2, P.CROSSBEAM_TOP - P.PROFILE / 2) * Rot(90, 0, 0) * cable_clip_2020(), "printed")
+            Pos(x, -P.BEAM_W / 2 - 10.0, P.CROSSBEAM_TOP - 50.0) * Rot(90, 0, 0) * cable_clip_2020(), "printed")
     return out

@@ -143,8 +143,8 @@ SYSTEM_COLORS = (
     (("syringe_barrel",), (0.65, 0.82, 0.95, 0.6)),
     (("syringe_needle", "syringe_plunger", "actuator_shaft"), (0.15, 0.15, 0.18, 1.0)),
     (("cam_a", "cam_b", "actuator_body", "_motor", "_screw", "electronics_box", "_switch_l", "_switch_r"), (0.22, 0.25, 0.30, 1.0)),
-    (("base_plate", "y_plate", "z_plate", "z_riser"), (0.72, 0.75, 0.80, 1.0)),
-    (("upright", "crossbeam", "_post", "_rail", "_carriage"), (0.55, 0.58, 0.63, 1.0)),
+    (("base_plate", "y_plate", "z_plate", "z_riser", "crossbeam_rod"), (0.72, 0.75, 0.80, 1.0)),
+    (("upright", "_post", "_rail", "_carriage"), (0.55, 0.58, 0.63, 1.0)),
 )
 
 

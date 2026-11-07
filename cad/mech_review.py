@@ -111,13 +111,30 @@ def report():
     span = 2 * (P.UPRIGHT_X - P.PROFILE / 2)
     w = m_on_xcar * G
     sag = w * span ** 3 / (48 * E_AL * ix)
-    row("Crossbeam sag at the centre under the stack", round(sag * 1000), "um", "simply supported 2020, assumed I")
+    row("Crossbeam sag at the centre under the stack (2020 profile, for comparison)", round(sag * 1000), "um", "simply supported 2020, assumed I")
     torque = w * (P.ARM_REACH * 0.8) / 1000  # N m
     gj = 26e3 * j
     twist = torque * 1000 * (span / 4) / gj
     row("Crossbeam torque from the cantilevered stack", round(torque, 2), "N m")
-    row("Crossbeam twist at mid span", round(math.degrees(twist), 3), "deg",
+    row("Crossbeam twist at mid span (2020 profile, for comparison)", round(math.degrees(twist), 3), "deg",
         f"tip shift about {twist * 317 * 1000:.0f} um (lever 317 mm), assumed J")
+
+    # crossbeam as a hollow printed box with four aluminium rods (card mech-viga)
+    g_petg = assume("PETG shear modulus", 0.65e3, "MPa", "about E / 2.7; verify with a printed test beam")
+    for bw, bh in ((40.0, 60.0), (60.0, 80.0), (80.0, 100.0)):
+        wall, rod_d = 3.0, 8.0
+        off_z = bh / 2 - wall - rod_d / 2 - 0.2
+        i_rods = 4 * (math.pi * rod_d ** 2 / 4 * off_z ** 2 + math.pi * rod_d ** 4 / 64)
+        i_shell = (bw * bh ** 3 - (bw - 2 * wall) * (bh - 2 * wall) ** 3) / 12
+        ei = E_AL * i_rods + e_petg * i_shell  # N mm2
+        sag_p = w * span ** 3 / (48 * ei)
+        a_m, perim = (bw - wall) * (bh - wall), 2 * ((bw - wall) + (bh - wall))
+        j_p = 4 * a_m ** 2 * wall / perim
+        twist_p = torque * 1000 * (span / 4) / (g_petg * j_p)
+        row(f"Printed hollow beam {bw:g} x {bh:g} mm, four 8 mm rods: bending stiffness", round(ei / 1e9, 2), "kN m2",
+            f"sag {sag_p * 1000:.0f} um at the centre; the 2020 profile is {E_AL * ix / 1e9:.2f}")
+        row(f"Printed hollow beam {bw:g} x {bh:g} mm: twist at mid span", round(math.degrees(twist_p), 3), "deg",
+            f"tip shift about {twist_p * 317 * 1000:.0f} um (lever 317 mm); the shell carries the torsion, the rods do not")
 
     # uprights: sway
     h = P.CROSSBEAM_TOP
