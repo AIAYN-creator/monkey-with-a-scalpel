@@ -6,7 +6,8 @@ Usage, from the repository root:
     python cad/wiring.py --diagram out/wiring.png    draw the block diagram (needs Pillow)
 
 The tool interface follows the contract of the card dec-iface: one 12-circuit connector per tool, the wrist motors are machine cables, and
-every tool is checked against its descriptor (tools/<name>/descriptor.yaml). Nothing here is a verified design. Lengths come from the provisional CAD parameters plus assumed routes; currents and
+every tool is checked against its descriptor (tools/<name>/descriptor.yaml). The 12 circuits end on a small head board on the Z carriage,
+which talks to the controller over an RS-485 pair, so the controller needs three GPIOs for all eight tools. Nothing here is a verified design. Lengths come from the provisional CAD parameters plus assumed routes; currents and
 connectors are typical values to confirm against the datasheets of what is bought. The mains side and the
 motor-power cut-off must be built and reviewed by a qualified person. Pins are read from
 firmware/board/controller_board/board_config.h so the map cannot drift from the firmware.
@@ -62,21 +63,20 @@ CABLES = [
     ("C5", "Z motor (NEMA 17 dual shaft, on the Y carriage)", 4, True, True,
      metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH), "4-pin JST-XH"),
     ("C6", "Z limit switch, top", 2, False, True, metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH), "2-pin JST-XH"),
-    ("C7", "Tool bus: switched tool power, ground, 5 V, identification, four signals, two spare (see the tool table)", 12, True, True,
-     metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "12-circuit floating connector at the tool (tool_connector_holder)"),
-    ("C8", "Control panel: e-stop contact, ABORT button, pilot LED (common ground)", 5, False, False, 1.0, "5-pin JST-XH"),
+    ("C7", "Head link: tool power 24 V and ground, RS-485 pair, enable signal, power permit, plunger motor phases (see HEAD_LINK)", 12, True, True,
+     metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "12-pin connector on the head board (Z carriage)"),
+    ("C8", "Control panel: dual-contact e-stop and ABORT button (coil, enable loop, ABORT signal), pilot LED, common ground", 7, False, False, 1.0, "7-pin JST-XH"),
     ("C9", "Camera A (USB)", 4, True, False, 2.0, "USB, cable with ferrite"),
     ("C10", "Camera B (USB)", 4, True, False, 2.0, "USB, cable with ferrite"),
     ("C11", "Host PC to the controller (USB serial)", 4, True, False, 1.5, "USB"),
     ("C12", "Wrist axis A motor (NEMA 11)", 4, True, True, metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "4-pin JST-XH, fixed to the wrist"),
     ("C13", "Wrist axis B motor (NEMA 11)", 4, True, True, metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "4-pin JST-XH, fixed to the wrist"),
-    ("C14", "Tool presence switch (common ground)", 2, False, True, metres(STATIC_X + X_CHAIN + Y_CHAIN + REACH + Z_DROP), "2-pin JST-XH on the backplate"),
 ]
 
 # Conductors that travel through the X chain and through the Y chain (the moving harness)
 MOVING = {
-    "X chain": ["C3", "C4", "C5", "C6", "C7", "C12", "C13", "C14"],
-    "Y chain": ["C5", "C6", "C7", "C12", "C13", "C14"],
+    "X chain": ["C3", "C4", "C5", "C6", "C7", "C12", "C13"],
+    "Y chain": ["C5", "C6", "C7", "C12", "C13"],
 }
 
 # --- power --------------------------------------------------------------------------------------------------------
@@ -118,19 +118,30 @@ TOOL_WIRING = {
     "sensor": {7: ("light source", "pwm"), 11: ("detector", "analog")},
 }
 
-# What the controller needs besides the existing pins. The ESP32-S3 board has one free GPIO (39): the two reserved TMC2209 UART pins
-# (13, 14) are reclaimed for an I2C bus that carries a 1-wire bridge, a PWM driver, an input expander and an ADC. The tool power enable
-# stays on its own pin so that it does not depend on the bus (a reset leaves it off).
-TOOL_PINS = {"tool_power_enable": 39, "i2c_sda": 13, "i2c_scl": 14}
-I2C_DEVICES = [
-    ("1-wire bridge (DS2484 class)", "reads the identification memory on circuit 6; its presence pulse also tells that a tool is there"),
-    ("16-channel PWM driver (PCA9685 class)", "pwm signals on circuits 7-10"),
-    ("16-bit I/O expander (PCA9555 class)", "digital in and out on circuits 7-10, the presence switch (C14), the guard and tachometer inputs"),
-    ("4-channel ADC (ADS1115 class)", "analog inputs on circuits 11-12"),
+# Pins. The ESP32-S3 board has one free GPIO (39) and the reserved TMC2209 UART pair (13, 14), which the standalone drivers do not use. That
+# is enough because the tool circuits do not come to the controller one by one: they end on a head board (below).
+TOOL_PINS = {"head_uart_tx": 13, "head_uart_rx": 14, "tool_power_permit": 39}
+
+# The head board sits on the Z carriage, next to the tool. A small microcontroller (ESP32-C3 class, the same toolchain as the controller) with a local 5 V and 3.3 V supply from the
+# tool rail. It reads the identification memory (1-wire) and the presence switch, drives circuits 7-10 (PWM, digital, motor phases are
+# passed straight through from the P driver) and reads circuits 11-12 (ADC), and switches the tool power with a high-side switch. It answers
+# the controller on the RS-485 link, and it cuts the tool outputs and the power by itself if the link is silent for 200 ms.
+HEAD_BOARD = {
+    "mcu": "ESP32-C3 class, 3.3 V (RISC-V, 5 ADC channels, PWM and UART in hardware)",
+    "link": "RS-485 half duplex over the pair A, B of C7, 115200 baud, auto-direction transceiver at each end (2 GPIOs on the controller)",
+    "watchdog_ms": 200,
+    "inputs": "1-wire identification (circuit 6), presence switch, digital inputs of circuits 7-10, two ADC channels (circuits 11-12)",
+    "outputs": "four PWM or digital outputs (circuits 7-10), high-side tool power switch, status LED",
+}
+# Conductors of C7 (12). The enable loop is a 5 V loop in the electronics box that goes through the second contact of the e-stop and of
+# the ABORT button (dual-contact parts) and back to the head board: it is closed only while both are released.
+HEAD_LINK = [
+    ("tool rail 24 V", 2), ("tool rail ground", 2), ("RS-485 A", 1), ("RS-485 B", 1), ("enable loop", 1),
+    ("power permit from GPIO 39", 1), ("plunger motor A+ and A-", 2), ("plunger motor B+ and B-", 2),
 ]
-# Tools whose power also goes through a hardware cut-off that the controller cannot override (descriptor power.hw_cutoff).
-HW_CUTOFF_NOTE = ("series switch on the tool 24 V, held closed only while the ABORT loop is intact, the contactor is on and the controller "
-                  "asserts the enable; it opens on its own, without the controller")
+HW_CUTOFF_NOTE = ("on the head board, a series switch on the tool 24 V that conducts only while three things hold at once: the enable loop is "
+                  "closed (e-stop and ABORT released), the controller asserts the power permit (GPIO 39) and the head microcontroller asks for "
+                  "power. It is built from discrete logic (an AND of the first two feeding the gate), so it opens on its own, without any software")
 PIN_FORBIDDEN = {0, 3, 19, 20, 43, 44, 45, 46, 48} | set(range(26, 38))
 
 
@@ -201,11 +212,11 @@ def check_tools():
             problems.append(f"tool {name} has motor phases but does not use the P axis")
         if desc["class"] in ("drill", "cautery") and desc["power.hw_cutoff"] != "true":
             problems.append(f"tool {name} must have a hardware cut-off")
-    # pins: the three new ones must be free, allowed and the reclaimed ones must be the reserved UART pair
-    used = {p for k, v in PINS.items() if isinstance(v, int) and v >= 0 and k not in ("kReservedUartTx", "kReservedUartRx") for p in [v]}
+    # pins: the three new ones must be free, allowed, and the reclaimed ones must be the reserved UART pair
+    used = {v for k, v in PINS.items() if isinstance(v, int) and v >= 0 and k not in ("kReservedUartTx", "kReservedUartRx")}
     used |= {p for v in PINS.values() if isinstance(v, list) for p in v if p >= 0}
-    if {TOOL_PINS["i2c_sda"], TOOL_PINS["i2c_scl"]} != {PINS["kReservedUartTx"], PINS["kReservedUartRx"]}:
-        problems.append("the I2C pins are not the reserved TMC2209 UART pair")
+    if {TOOL_PINS["head_uart_tx"], TOOL_PINS["head_uart_rx"]} != {PINS["kReservedUartTx"], PINS["kReservedUartRx"]}:
+        problems.append("the head link UART is not on the reserved TMC2209 UART pair")
     for name, pin in TOOL_PINS.items():
         if pin in used:
             problems.append(f"{name} (GPIO {pin}) is already used")
@@ -213,11 +224,15 @@ def check_tools():
             problems.append(f"{name} (GPIO {pin}) is a forbidden pin of the board")
     if len(set(TOOL_PINS.values())) != len(TOOL_PINS):
         problems.append("a tool pin is used twice")
-    # resource counts on the I2C bus
-    pwm = max(sum(1 for _s, k in w.values() if k == "pwm") for w in TOOL_WIRING.values())
-    digital = max(sum(1 for _s, k in w.values() if k in ("out", "in")) for w in TOOL_WIRING.values())
-    if pwm > 4 or digital > 4:
-        problems.append("a tool needs more channels than the circuits provide")
+    conductors = {c[0]: c[2] for c in CABLES}
+    if sum(n for _what, n in HEAD_LINK) != conductors["C7"]:
+        problems.append(f"HEAD_LINK has {sum(n for _w, n in HEAD_LINK)} conductors, C7 has {conductors['C7']}")
+    # the head board resources
+    pwm = max(sum(1 for _s, k in w.values() if k in ("pwm", "out")) for w in TOOL_WIRING.values())
+    inputs = max(sum(1 for _s, k in w.values() if k == "in") for w in TOOL_WIRING.values())
+    adc = max(sum(1 for _s, k in w.values() if k == "analog") for w in TOOL_WIRING.values())
+    if pwm > 4 or pwm + inputs > 4 or adc > 2:
+        problems.append("a tool needs more head board channels than circuits 7-12 provide")
     return problems
 
 
@@ -259,14 +274,18 @@ def markdown():
     for name, ident, amps, cutoff, cut, used in tool_table():
         out.append(f"| {name} | {ident} | {amps} | {cutoff} | {cut} | {used} |")
     out.append("\nCircuits 1-2 switched 24 V, 3-4 ground, 5 logic 5 V, 6 identification (1-wire).")
-    out.append("\n## Tool pins and I2C devices (proposed, not yet in the firmware)\n")
+    out.append("\n## Head board and the three controller pins for the tools (proposed, not yet in the firmware)\n")
     out.append("| Signal | GPIO | Note |\n|---|---|---|")
-    notes = {"tool_power_enable": "own pin, off after a reset", "i2c_sda": "reclaims kReservedUartTx", "i2c_scl": "reclaims kReservedUartRx"}
+    notes = {"head_uart_tx": "reclaims kReservedUartTx, to the RS-485 transceiver", "head_uart_rx": "reclaims kReservedUartRx, from the RS-485 transceiver",
+             "tool_power_permit": "own wire in C7, off after a reset"}
     for signal, pin in TOOL_PINS.items():
         out.append(f"| {signal} | {pin} | {notes[signal]} |")
-    out.append("\n| Device on the I2C bus | Carries |\n|---|---|")
-    for device, carries in I2C_DEVICES:
-        out.append(f"| {device} | {carries} |")
+    out.append("\n| Head board | |\n|---|---|")
+    for key, value in HEAD_BOARD.items():
+        out.append(f"| {key} | {value} |")
+    out.append("\n| C7 conductors | Count |\n|---|---|")
+    for what, count in HEAD_LINK:
+        out.append(f"| {what} | {count} |")
     out.append(f"\nHardware cut-off (drill, cautery): {HW_CUTOFF_NOTE}.")
     holding, supply = power_budget()
     out.append(f"\n## Motor power (assumed)\n\nMotor currents set on the drivers: {MOTOR_CURRENT_A} A, coil resistance "
@@ -351,7 +370,7 @@ def diagram(path):
     box(1560, 110, 410, 120, "X axis", ["motor C1, switches C2", "static on the crossbeam"])
     box(1560, 260, 410, 120, "Y axis (moves with X)", ["motor C3, switches C4", "through the X chain"])
     box(1560, 410, 410, 120, "Z axis (moves with Y)", ["motor C5, top switch C6", "through the X and Y chains"])
-    box(1560, 560, 410, 150, "Tool head (quick change)", ["tool bus C7 (12 circuits), presence C14", "wrist motors A, B: C12, C13"])
+    box(1560, 560, 410, 150, "Tool head (quick change)", ["head board: C7 (12 conductors)", "wrist motors A, B: C12, C13"])
     # panel and PC
     box(470, 520, 330, 110, "Control panel", ["e-stop, ABORT, pilot: C8", "5 conductors"], "#fdebeb", "#a22")
     box(920, 800, 520, 130, "Host PC", ["USB serial to the ESP32 (C11)", "Python loop, safety heartbeat"])
@@ -375,7 +394,7 @@ def diagram(path):
     line((1440, 170), (1560, 170), "C1 C2", "#335")
     line((1440, 320), (1560, 320), "C3 C4", "#335")
     line((1440, 470), (1560, 470), "C5 C6", "#335")
-    line((1440, 635), (1560, 635), "C7 C12-14", "#335")
+    line((1440, 635), (1560, 635), "C7 C12 C13", "#335")
     line((1180, 670), (1180, 800), "C11 USB", "#335")
     line((1440, 865), (1560, 865), "C9 C10", "#335")
     image.save(path)
