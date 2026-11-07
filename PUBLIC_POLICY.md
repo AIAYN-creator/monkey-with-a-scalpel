@@ -1,6 +1,6 @@
 # What is public and what is not
 
-## Public (MIT)
+## Public (AGPL-3.0 for software, CERN-OHL-S v2 for designs; see the README)
 
 - Source code: simulation, control scripts, firmware, vision.
 - CAD files and print settings.

@@ -128,4 +128,15 @@ The CAD needs `pip install -r requirements-cad.txt`; then `python cad/build.py o
 
 ## License
 
-[MIT](LICENSE), copyright AIAYN-creator.
+The project is licensed in layers, and each folder carries its own `LICENSE` file:
+
+| What | Folders | Licence |
+|---|---|---|
+| Software | [firmware/](firmware/LICENSE), [host/](host/LICENSE), [tools/](tools/LICENSE), [simulation/](simulation/LICENSE) | [GNU AGPL-3.0](LICENSE) |
+| Hardware designs and documentation | [cad/](cad/LICENSE), [docs/](docs/LICENSE) | [CERN-OHL-S v2](cad/LICENSE) (strongly reciprocal) |
+| Name and logo | [assets/](assets/LICENSE) | All rights reserved, see [TRADEMARKS.md](TRADEMARKS.md) |
+
+The software is also available under a [commercial licence](COMMERCIAL-LICENSE.md) for use without the AGPL's obligations. Contributions
+need the [contributor grant](CLA.md). Versions up to commit `82339bb` were published under the MIT License and stay available under it
+([LICENSES/MIT-historical.txt](LICENSES/MIT-historical.txt)). The full notices are in [NOTICE](NOTICE). Not legal advice: have a lawyer
+review the terms before you build a business on them.

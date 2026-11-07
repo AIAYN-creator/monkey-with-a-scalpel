@@ -51,4 +51,7 @@ If you spot something that could make the hardware unsafe, or content that shoul
 
 ## License
 
-By contributing you agree that your contributions are licensed under the [MIT License](LICENSE).
+The repository is licensed in layers: the software under the [AGPL-3.0](LICENSE), the hardware designs and documentation under the
+[CERN-OHL-S v2](cad/LICENSE) (see the table in the [README](README.md#license)). Every contribution needs the
+[contributor grant](CLA.md), which includes the right for the copyright holder to relicense it commercially: add `Signed-off-by:` to your
+commits (`git commit -s`) to accept it.

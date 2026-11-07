@@ -1,0 +1,30 @@
+Vernier
+Copyright (c) 2026 AIAYN-creator
+
+This repository is licensed in layers. Each folder carries its own LICENSE file; the table is in the README.
+
+Software (firmware/, host/, tools/, simulation/)
+  This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as
+  published by the Free Software Foundation, version 3 of the License. It is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General
+  Public License for more details. SPDX-License-Identifier: AGPL-3.0-only
+
+Hardware (cad/, docs/)
+  Copyright 2026 AIAYN-creator.
+  This source describes Open Hardware and is licensed under the CERN-OHL-S v2.
+  You may redistribute and modify this source and make products using it under the terms of the CERN-OHL-S v2
+  (https://ohwr.org/cern_ohl_s_v2.txt).
+  This source is distributed WITHOUT ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING OF MERCHANTABILITY, SATISFACTORY QUALITY AND FITNESS FOR
+  A PARTICULAR PURPOSE. Please see the CERN-OHL-S v2 for applicable conditions.
+  Source location: https://github.com/AIAYN-creator/vernier
+  As per CERN-OHL-S v2 section 4, should You produce hardware based on this source, You must where practicable maintain the Source
+  Location visible on the external case of the Gizmo or other products you make using this source.
+  SPDX-License-Identifier: CERN-OHL-S-2.0
+
+Name and logo (assets/brand/)
+  Not licensed for reuse. See TRADEMARKS.md.
+
+Versions up to and including commit 82339bb were published under the MIT License (LICENSES/MIT-historical.txt). Anyone who obtained
+them under the MIT License keeps those rights for those versions.
+
+A commercial licence for the software, without the obligations of the AGPL, is available: see COMMERCIAL-LICENSE.md.
