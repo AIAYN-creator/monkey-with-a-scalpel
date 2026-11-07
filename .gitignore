@@ -88,6 +88,9 @@
 !docs/
 !docs/media/
 !docs/connection_map.md
+!docs/cad/
+!docs/cad/README.md
+!docs/cad/*.png
 !docs/connection_map.png
 !docs/wiring_blocks.png
 !docs/media/self_correction_loop.gif

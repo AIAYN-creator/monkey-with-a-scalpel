@@ -59,6 +59,16 @@ An error model ([`simulation/error_model.py`](simulation/error_model.py)) and a 
 
 There is no fixed pass mark. The minimum acceptable is to beat a steady human hand, whose involuntary tremor is taken here as a working benchmark of 50-100 µm (published figures vary with the task, the metric and whether the wrist is supported, so the benchmark will be defined precisely and cited before any comparison is made). Beyond that, errors in position and volume are driven as low as the hardware allows, and every phase measures and publishes what it achieves with its uncertainty. Dispensed volumes are around 1 µL, measured with an analytical balance, camera images and the syringe scale.
 
+## The CAD
+
+![The whole system with the large travel: tool rack and wash station inside the reach of the gantry](docs/cad/system_400x250x150.png)
+
+The eight tools and the wash station, drawn as printed parts (orange) around bought ones:
+
+![The eight tools and the wash station](docs/cad/tools_and_wash_station.png)
+
+All renders, with what each one shows, are in [docs/cad](docs/cad/README.md); the wiring is in the [connection map](docs/connection_map.md). Every size is provisional and nothing should be printed yet.
+
 ## Principles
 
 - **Human in the loop.** The agent proposes; a person approves. The agent never acts on hardware by itself.
