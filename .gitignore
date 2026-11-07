@@ -41,6 +41,7 @@
 !cad/README.md
 !cad/params.py
 !cad/wiring.py
+!cad/connection_map.py
 !cad/check_report.py
 !cad/test_modules.py
 !cad/tool_check.py
@@ -86,6 +87,9 @@
 !requirements-cad.txt
 !docs/
 !docs/media/
+!docs/connection_map.md
+!docs/connection_map.png
+!docs/wiring_blocks.png
 !docs/media/self_correction_loop.gif
 !docs/media/self_correction_loop.mp4
 

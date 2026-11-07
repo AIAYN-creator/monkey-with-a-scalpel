@@ -127,6 +127,8 @@ jobs:
         run: python tools/int_check.py
       - name: Wiring map matches the firmware pins
         run: python cad/wiring.py --check
+      - name: Connection map matches the firmware pins and the wiring map
+        run: python cad/connection_map.py --check
       - name: Error model self-check
         run: python simulation/sweep_errores.py --check
       - name: Error sweep (short)
