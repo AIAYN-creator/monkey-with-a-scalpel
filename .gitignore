@@ -49,6 +49,7 @@
 !cad/params.py
 !cad/wiring.py
 !cad/connection_map.py
+!cad/test_beam.py
 !cad/check_report.py
 !cad/test_modules.py
 !cad/tool_check.py
@@ -95,6 +96,7 @@
 !docs/
 !docs/media/
 !docs/connection_map.md
+!docs/beam_test.md
 !docs/cad/
 !docs/cad/README.md
 !docs/cad/*.png

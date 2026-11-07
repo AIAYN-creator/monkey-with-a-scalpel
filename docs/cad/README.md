@@ -16,4 +16,4 @@ renders the sheets. The travel is chosen with `VERNIER_TRAVEL="x,y,z"` (see [cad
 a study (cards `mech-estaciones` and `mech-viga`): it builds without interferences and with every camera line of sight clear; the crossbeam
 is the printed hollow box with aluminium rods (the large orange beam), and the transmission for that travel is not designed yet.
 
-See also the [connection map](../connection_map.md) and the [block diagram](../wiring_blocks.png).
+See also the [beam test protocol](../beam_test.md), the [connection map](../connection_map.md) and the [block diagram](../wiring_blocks.png).
