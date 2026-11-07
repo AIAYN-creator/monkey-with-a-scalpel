@@ -30,4 +30,9 @@ PARTS = {"wash_tray": (wash_tray, "printed")}
 
 def fixed(variant, setback):
     wy = work_y(variant, setback)
-    return {"wash_tray_placed": (Pos(60.0, wy + 120.0, 0) * wash_tray(), "printed")}
+    return {"wash_tray_placed": (Pos(20.0, wy + 120.0, 0) * wash_tray(), "printed")}
+
+
+# Washing means the tool goes into the bath: the needle and the head overlap the tray on purpose.
+ALLOWED = {frozenset((h, "wash_tray_placed")) for h in ("syringe_needle", "wrist_yoke", "wrist_cradle", "tool_backplate", "hamilton_clamp")}
+

@@ -14,7 +14,7 @@ ALLOWED = {frozenset(("x_screw", "x_motor"))}
 
 def fixed(variant, setback):
     wy = work_y(variant, setback)
-    front = wy + 170.0
+    front = wy + 170.0 + P.DY
     out = {}
     tray_holes = [(sx * 40.0, wy + sy * 40.0) for sx in (-1, 1) for sy in (-1, 1)]
     out["base_plate"] = (SP.base_plate(front + 130.0, -130.0 - P.DY / 2, tray_holes), "machined")

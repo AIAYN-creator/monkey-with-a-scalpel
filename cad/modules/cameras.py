@@ -25,7 +25,7 @@ def fixed(variant, setback):
     out["cam_a_wedge"] = (Pos(0, flat_y, tilt_z) * Rot(0, 0, 180) * SP.camera_wedge(pitch), "printed")
     out["cam_a"] = (Pos(cx, cy, cz) * aim((0.0, -cp, -sp_)) * SP.camera_body(), "dummy")
     bx, by, bz = cams["B"]["centre"]
-    out["cam_b_post"] = (Pos(bx + 22.5 + 5.0 + 10.0, by, 0) * SP.profile(120.0), "purchased")
+    out["cam_b_post"] = (Pos(bx + 22.5 + 5.0 + 10.0, by, 0) * SP.profile(max(120.0, bz + 40.0)), "purchased")
     out["cam_b_plate"] = (Pos(bx + 22.5 + 5.0, by, bz) * Rot(0, 0, 90) * parts.camera_plate(), "printed")
     out["cam_b"] = (Pos(bx, by, bz) * aim((-1.0, 0.0, 0.0)) * SP.camera_body(), "dummy")
     return out

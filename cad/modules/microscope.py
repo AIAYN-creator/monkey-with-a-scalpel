@@ -36,11 +36,11 @@ PARTS = {"microscope_clamp": (microscope_clamp, "printed")}
 
 def fixed(variant, setback):
     wy = work_y(variant, setback)
-    xm = -P.MICRO_WD - 30.0  # clamp position: the lens is MICRO_WD from the target, the clamp 30 mm behind the lens
+    xm = -P.MICRO_WD - 30.0 - P.DX / 2 - (10.0 if P.DX > 0 else 0.0)  # parked beyond the sweep when the travel is large; clamp position: the lens is MICRO_WD from the target, the clamp 30 mm behind the lens
     z = P.MICRO_Z
     out = {}
     out["microscope_post"] = (Pos(xm, wy, 0) * SP.profile(z - CLAMP[2] / 2), "purchased")
     out["microscope_clamp"] = (Pos(xm, wy, z) * microscope_clamp(), "printed")
-    centre = -P.MICRO_WD - P.MICRO_L / 2
+    centre = xm + 30.0 - P.MICRO_L / 2 + 0.0
     out["microscope"] = (Pos(centre, wy, z) * aim((1.0, 0.0, 0.0)) * microscope_body(), "dummy")
     return out

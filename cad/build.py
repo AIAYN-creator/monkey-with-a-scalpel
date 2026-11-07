@@ -121,7 +121,7 @@ def main(out_dir):
         sight[variant] = SYS.line_of_sight(variant, setback)
         for cam, res in sight[variant].items():
             if res["blocked"]:
-                problems.append(f"line of sight {variant} camera {cam}: {len(res['blocked'])} of {res['total']} blocked")
+                problems.append(f"line of sight {variant} camera {cam}: {len(res['blocked'])} of {res['total']} blocked {res['blocked'][:4]}")
 
     bom = {}
     for fx in (fixed, fixed_w):

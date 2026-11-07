@@ -49,8 +49,8 @@ def camera_layout(variant, setback):
     wy = work_y(variant, setback)
     pitch = 40.0
     return {
-        "A": {"centre": (0.0, wy + 175.0, 170.0), "pitch": pitch},
-        "B": {"centre": (152.5, wy, 45.0)},
+        "A": {"centre": (0.0, wy + 175.0 + P.DY, 170.0), "pitch": pitch},
+        "B": {"centre": (152.5 + 1.2 * P.DX, wy, 45.0 + 0.05 * P.DX)},
     }
 
 

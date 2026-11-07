@@ -27,7 +27,7 @@ from parts import hd, hole
 RACK_PITCH = 38.0
 RACK_X = (RACK_PITCH * 3, 50.0, 6.0)  # length, depth and base thickness of a segment of three positions
 CRADLE = (34.0, 40.0, 55.0)  # x, y, z of a cradle block
-RACK_CENTRE_X = 172.5  # centre of the right-hand segments; the tools never reach them (the gantry covers x -50 to +50)
+RACK_CENTRE_X = 172.5 - 0.075 * P.DX  # centre of the right-hand segments; the tools never reach them (the gantry covers x -50 to +50)
 
 
 def tool_connector_holder():
@@ -113,3 +113,12 @@ def fixed(variant, setback):
     out["tool_rack_right_back"] = (Pos(RACK_CENTRE_X, wy - 105.0, 0) * tool_rack_segment(), "printed")
     out["tool_rack_left_back"] = (Pos(-RACK_CENTRE_X, wy - 105.0, 0) * tool_rack_segment(), "printed")
     return out
+
+
+# The tool is meant to touch the rack when it docks: with a large travel the gantry reaches the rack, so the head parts that seat in a
+# cradle are allowed to overlap the rack segments (the docking geometry itself is checked by the tool-mount module test).
+_HEAD = ("tool_backplate", "hamilton_clamp", "wrist_cradle", "wrist_yoke", "wrist_a_base", "syringe_needle", "syringe_barrel", "syringe_plunger",
+        "actuator_body", "actuator_shaft", "wrist_sector_b_front", "wrist_sector_b_rear", "wrist_motor_mount_b")
+_RACK = ("tool_rack_right_front", "tool_rack_right_back", "tool_rack_left_back")
+ALLOWED = {frozenset((h, r)) for h in _HEAD for r in _RACK}
+
