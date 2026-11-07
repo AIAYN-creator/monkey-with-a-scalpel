@@ -13,7 +13,7 @@ part drawn as a placeholder. **Every size is an assumption or a catalogue value;
 
 They are generated, not drawn: `python cad/build.py out` builds the STL files and checks the geometry, `python cad/render.py out docs/cad`
 renders the sheets. The travel is chosen with `VERNIER_TRAVEL="x,y,z"` (see [cad/README.md](../../cad/README.md)). The large-travel image is
-a study (card `mech-estaciones`): it builds without interferences and with every camera line of sight clear, but the beam and the
-transmission for that travel are not designed yet.
+a study (cards `mech-estaciones` and `mech-viga`): it builds without interferences and with every camera line of sight clear; the crossbeam
+is the printed hollow box with aluminium rods (the large orange beam), and the transmission for that travel is not designed yet.
 
 See also the [connection map](../connection_map.md) and the [block diagram](../wiring_blocks.png).

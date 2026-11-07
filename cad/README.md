@@ -120,3 +120,13 @@ is fine and every collision is a station that sat outside the reach of the gantr
 B): they have to be laid out again inside the travel (card mech-estaciones). `python cad/mech_review.py` prints the loads, the beam sag and
 twist and the critical speed of each screw for the chosen travel; T8 screws are not enough above about 300 mm.
 
+## Printed hollow crossbeam (card mech-viga)
+
+The X beam is no longer two 2020 profiles: `modules/beam.py` builds it as printed tube segments (at most 200 mm, the print volume is 220 mm)
+with four rod bosses and a bulkhead every 50 mm, four 8 mm aluminium rods through all the bores (0.2 mm clearance for the epoxy) and a 6 mm
+end plate on each side. The section follows the X travel: 60 x 80 mm for 100 mm, 80 x 100 mm for a large travel (`BEAM_W`, `BEAM_H` in
+`params.py`). `python cad/mech_review.py` compares three sections: bending is easy (a 40 x 60 mm tube with the rods is about ten times a 2020
+profile), **torsion decides**: at X 400 mm only the 80 x 100 mm section keeps the tip shift near 0.4 mm. Not designed yet: the flatness of
+the rail seat, the heat-set inserts for the rail screws, how the rods are held at the uprights, and the real stiffness of a bonded printed
+tube, which needs a printed test beam. Both the default travel and X 400, Y 250, Z 150 build without interferences.
+
